@@ -1,36 +1,769 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ФерМама - Заявки</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-        }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Заявки ФерМама</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+  </style>
 </head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+
+<body class="bg-slate-50">
+  <div id="app"></div>
+
+  <script>
+    // =========================
+    // ДАННЫЕ (строго из constants.ts во вложении)
+    // =========================
+    const MANAGERS = [
+      { name: 'Наталья Йошкар-Ола', clients: [] },
+      { name: 'Мария Чебоксары', clients: [] }
+    ];
+
+    const PRODUCTS = [
+      // 6.1 Штучные
+      { id: 'p1', name: 'Вареники с картошкой 450 гр', unit: 'шт', price: 145 },
+      { id: 'p2', name: 'Вареники с картошкой 900 гр', unit: 'шт', price: 290 },
+      { id: 'p3', name: 'Голубцы ленивые 500г', unit: 'шт', price: 220 },
+      { id: 'p4', name: 'Зразы Любительские 500 гр', unit: 'шт', price: 225 },
+      { id: 'p5', name: 'Котлеты Домашние 500 гр', unit: 'шт', price: 265 },
+      { id: 'p6', name: 'Котлеты По-киевски 500 гр', unit: 'шт', price: 240 },
+      { id: 'p7', name: 'Котлеты Пожарские 500 гр', unit: 'шт', price: 230 },
+      { id: 'p8', name: 'Котлеты Фирменные 500 гр', unit: 'шт', price: 268 },
+      { id: 'p9', name: 'Котлеты из индейки 500 г', unit: 'шт', price: 300 },
+      { id: 'p10', name: 'Котлеты куриные с сырно-сливочной начинкой 500 гр', unit: 'шт', price: 258 },
+      { id: 'p11', name: 'Манты по-сибирски 450 гр', unit: 'шт', price: 185 },
+      { id: 'p12', name: 'Манты по-сибирски 900 гр', unit: 'шт', price: 370 },
+      { id: 'p13', name: 'Наггетсы Фирменные 500 гр', unit: 'шт', price: 255 },
+      { id: 'p14', name: 'Пельмени Домашние 450 гр', unit: 'шт', price: 179 },
+      { id: 'p15', name: 'Пельмени Домашние 900 гр', unit: 'шт', price: 358 },
+      { id: 'p16', name: 'Пельмени Куриные 450 гр', unit: 'шт', price: 159 },
+      { id: 'p17', name: 'Пельмени Куриные 900 гр', unit: 'шт', price: 318 },
+      { id: 'p18', name: 'Пельмени Свинина-Курица 450 гр', unit: 'шт', price: 160 },
+      { id: 'p19', name: 'Пельмени Свинина-Курица 900 гр', unit: 'шт', price: 320 },
+      { id: 'p20', name: 'Пельмени из свинины 450г', unit: 'шт', price: 161 },
+      { id: 'p21', name: 'Пельмени из свинины 900г', unit: 'шт', price: 322 },
+      { id: 'p22', name: 'Пельмени из филе грудки индейки со слив. маслом 450 гр', unit: 'шт', price: 185 },
+      { id: 'p23', name: 'Пельмени из филе грудки индейки со слив. маслом 900 гр', unit: 'шт', price: 370 },
+      { id: 'p24', name: 'Подкоголи Домашние 450 гр', unit: 'шт', price: 175 },
+      { id: 'p25', name: 'Подкоголи Домашние 900 гр', unit: 'шт', price: 350 },
+      { id: 'p26', name: 'Равиоли 450г', unit: 'шт', price: 263 },
+      { id: 'p27', name: 'Равиоли 900г', unit: 'шт', price: 525 },
+      { id: 'p28', name: 'Фрикадельки Любимые 500 гр', unit: 'шт', price: 199 },
+      { id: 'p29', name: 'Чебуреки по-домашнему 500 гр', unit: 'шт', price: 229 },
+      { id: 'p30', name: 'Чебуреки с курицей 500 гр', unit: 'шт', price: 190 },
+      { id: 'p31', name: 'Чебуреки с сыром 500 гр', unit: 'шт', price: 279 },
+      { id: 'p32', name: 'Сырники 500 гр', unit: 'шт', price: 270 },
+
+      // 6.2 Весовые (расчёт за кг)
+      { id: 'w1', name: 'Вареники с картошкой вес.', unit: 'кг', price: 322 },
+      { id: 'w2', name: 'Голубцы ленивые вес.', unit: 'кг', price: 440 },
+      { id: 'w3', name: 'Зразы Любительские вес.', unit: 'кг', price: 450 },
+      { id: 'w4', name: 'Котлеты Домашние вес.', unit: 'кг', price: 530 },
+      { id: 'w5', name: 'Котлеты По-киевски вес.', unit: 'кг', price: 480 },
+      { id: 'w6', name: 'Котлеты Пожарские вес.', unit: 'кг', price: 460 },
+      { id: 'w7', name: 'Котлеты Фирменные вес.', unit: 'кг', price: 536 },
+      { id: 'w8', name: 'Котлеты из индейки вес.', unit: 'кг', price: 600 },
+      { id: 'w9', name: 'Котлеты куриные с сырно-сливочной начинкой вес.', unit: 'кг', price: 516 },
+      { id: 'w10', name: 'Манты по-сибирски вес.', unit: 'кг', price: 411 },
+      { id: 'w11', name: 'Наггетсы Фирменные вес.', unit: 'кг', price: 510 },
+      { id: 'w12', name: 'Пельмени Домашние вес.', unit: 'кг', price: 398 },
+      { id: 'w13', name: 'Пельмени Куриные вес.', unit: 'кг', price: 353 },
+      { id: 'w14', name: 'Пельмени Свинина-Курица вес.', unit: 'кг', price: 356 },
+      { id: 'w15', name: 'Пельмени из свинины вес.', unit: 'кг', price: 358 },
+      { id: 'w16', name: 'Пельмени из филе грудки индейки со слив. маслом вес.', unit: 'кг', price: 411 },
+      { id: 'w17', name: 'Подкоголи Домашние вес.', unit: 'кг', price: 389 },
+      { id: 'w18', name: 'Равиоли вес.', unit: 'кг', price: 583 },
+      { id: 'w19', name: 'Фрикадельки Любимые вес.', unit: 'кг', price: 398 },
+      { id: 'w20', name: 'Чебуреки по-домашнему вес.', unit: 'кг', price: 458 },
+      { id: 'w21', name: 'Чебуреки с курицей вес.', unit: 'кг', price: 380 },
+      { id: 'w22', name: 'Чебуреки с сыром вес.', unit: 'кг', price: 558 },
+      { id: 'w23', name: 'Сырники вес.', unit: 'кг', price: 540 },
+
+      // 6.3 Весовые (изначально в прайсе)
+      { id: 'wo1', name: 'Голубцы с мясом и рисом вес.', unit: 'кг', price: 339 },
+      { id: 'wo2', name: 'Колбаски Гриль с сыром вес.', unit: 'кг', price: 450 },
+      { id: 'wo3', name: 'Колбаски куриные из филе грудки вес.', unit: 'кг', price: 416 },
+      { id: 'wo4', name: 'Фарш Свинина-говядина вес.', unit: 'кг', price: 499 },
+      { id: 'wo5', name: 'Фарш Свиной вес.', unit: 'кг', price: 395 }
+    ];
+
+    // =========================
+    // СОРТИРОВКА (строго как в App.tsx)
+    // =========================
+    const getBaseName = (name) => name.replace(/\s*(?:(?:\d+\s*(?:гр|г|г))|вес\.)\s*$/i, '').trim();
+    const getWeightInGram = (name) => {
+      const match = name.match(/(\d+)\s*(?:гр|г|г)/i);
+      return match ? parseInt(match[1], 10) : Infinity;
+    };
+
+    const SORTED_PRODUCTS = [...PRODUCTS].sort((a, b) => {
+      const baseA = getBaseName(a.name);
+      const baseB = getBaseName(b.name);
+      if (baseA !== baseB) return baseA.localeCompare(baseB, 'ru');
+      if (a.unit === 'шт' && b.unit === 'кг') return -1;
+      if (a.unit === 'кг' && b.unit === 'шт') return 1;
+      if (a.unit === 'шт' && b.unit === 'шт') return getWeightInGram(a.name) - getWeightInGram(b.name);
+      return 0;
+    });
+
+    // =========================
+    // ИКОНКИ (SVG) — оставил как было в “одним файлом”
+    // =========================
+    function iconSvg(name, size, extraClass) {
+      const s = size || 18;
+      const cls = extraClass ? extraClass : '';
+      const common = `width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="${cls}"`;
+      const stroke = 'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+
+      switch (name) {
+        case 'plus':
+          return `<svg ${common}><path ${stroke} d="M12 5v14M5 12h14"/></svg>`;
+        case 'trash':
+          return `<svg ${common}><path ${stroke} d="M3 6h18"/><path ${stroke} d="M8 6V4h8v2"/><path ${stroke} d="M19 6l-1 14H6L5 6"/><path ${stroke} d="M10 11v6"/><path ${stroke} d="M14 11v6"/></svg>`;
+        case 'alert':
+          return `<svg ${common}><path ${stroke} d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path ${stroke} d="M12 9v4"/><path ${stroke} d="M12 17h.01"/></svg>`;
+        case 'check':
+          return `<svg ${common}><path ${stroke} d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path ${stroke} d="M22 4L12 14.01l-3-3"/></svg>`;
+        case 'chevronDown':
+          return `<svg ${common}><path ${stroke} d="M6 9l6 6 6-6"/></svg>`;
+        case 'user':
+          return `<svg ${common}><path ${stroke} d="M20 21a8 8 0 0 0-16 0"/><circle ${stroke} cx="12" cy="7" r="4"/></svg>`;
+        case 'store':
+          return `<svg ${common}><path ${stroke} d="M3 9l1-5h16l1 5"/><path ${stroke} d="M5 9v12h14V9"/><path ${stroke} d="M9 21v-8h6v8"/></svg>`;
+        case 'calendar':
+          return `<svg ${common}><rect ${stroke} x="3" y="4" width="18" height="18" rx="2"/><path ${stroke} d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+        case 'copy':
+          return `<svg ${common}><rect ${stroke} x="9" y="9" width="13" height="13" rx="2"/><path ${stroke} d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+        case 'rotateCcw':
+          return `<svg ${common}><path ${stroke} d="M3 2v6h6"/><path ${stroke} d="M3 8a9 9 0 1 0 2.64-6.36L3 8z"/></svg>`;
+        case 'messageSquare':
+          return `<svg ${common}><path ${stroke} d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>`;
+        case 'share':
+          return `<svg ${common}><path ${stroke} d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path ${stroke} d="M16 6l-4-4-4 4"/><path ${stroke} d="M12 2v13"/></svg>`;
+        case 'tg':
+          return `<svg ${common}><path ${stroke} d="M22 2L11 13"/><path ${stroke} d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>`;
+        case 'wa':
+          return `<svg ${common}><path ${stroke} d="M20 12a8 8 0 1 1-3.2-6.4"/><path ${stroke} d="M8.5 9.5c1.2 2.3 3.7 4.6 6 5.2"/><path ${stroke} d="M15.5 15.5l-1.7.7a1 1 0 0 1-1-.2l-1.2-.9"/><path ${stroke} d="M9 8.7l.7-1.7a1 1 0 0 1 .8-.6h.3"/></svg>`;
+        case 'vb':
+          return `<svg ${common}><path ${stroke} d="M21 11.5c0 5-4.4 9-9.8 9-1.2 0-2.4-.2-3.5-.6L3 21l1.3-4.2c-.5-1-.8-2.1-.8-3.3 0-5 4.4-9 9.8-9S21 6.5 21 11.5z"/></svg>`;
+        default:
+          return '';
+      }
+    }
+
+    // =========================
+    // СОСТОЯНИЕ
+    // =========================
+    const state = {
+      selectedManager: MANAGERS[0].name,
+      clientName: '',
+      orderDate: new Date().toISOString().split('T')[0],
+      orderComment: '',
+      orderItems: [], // {id, productId, quantity, qtyText}
+      status: null // {type:'success'|'error', msg:string}
+    };
+
+    // =========================
+    // УТИЛИТЫ
+    // =========================
+    function uid() { return Math.random().toString(36).substr(2, 9); }
+    function productById(id) { return PRODUCTS.find(p => p.id === id) || null; }
+    function formatRuMoney(n) { return Number(n || 0).toLocaleString('ru-RU'); }
+
+    function totalSum() {
+      return state.orderItems.reduce((acc, item) => {
+        const p = productById(item.productId);
+        return p ? acc + (Number(item.quantity || 0) * p.price) : acc;
+      }, 0);
+    }
+
+    function validItems() { return state.orderItems.filter(i => i.productId !== ''); }
+
+    function generateMessageText() {
+      const dateFormatted = new Date(state.orderDate).toLocaleDateString('ru-RU');
+      let text = `Заявка ФерМама\n\n`;
+      text += `Менеджер: ${state.selectedManager}\n`;
+      text += `Клиент: ${state.clientName || 'Не указан'}\n`;
+      text += `Дата: ${dateFormatted}\n\n`;
+
+      const v = validItems();
+      if (v.length > 0) {
+        text += `Список позиций:\n`;
+        v.forEach((item, index) => {
+          const p = productById(item.productId);
+          if (p) {
+            const sum = Number(item.quantity || 0) * p.price;
+            text += `${index + 1}) ${p.name} — ${item.quantity} ${p.unit} × ${p.price} ₽ = ${formatRuMoney(sum)} ₽\n`;
+          }
+        });
+      }
+
+      if (String(state.orderComment || '').trim()) {
+        text += `\nКомментарий: ${String(state.orderComment).trim()}\n`;
+      }
+
+      text += `\nИТОГОВАЯ СУММА: ${formatRuMoney(totalSum())} ₽`;
+      return text;
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setStatus(type, msg) {
+      state.status = { type, msg };
+      renderStatusOnly();
+      if (type === 'success') {
+        setTimeout(() => {
+          state.status = null;
+          renderStatusOnly();
+        }, 3000);
+      }
+    }
+
+    // =========================
+    // МЕССЕНДЖЕРЫ (кнопка "Отправить")
+    // =========================
+    function openMessenger(kind) {
+      if (state.orderItems.length === 0 || state.orderItems.every(i => !i.productId)) {
+        setStatus('error', 'Добавьте товары в заявку');
+        return;
+      }
+      const text = generateMessageText();
+
+      // Нативный Share (если доступен): покажет список мессенджеров
+      if (kind === 'share') {
+        if (navigator.share) {
+          navigator.share({ text }).catch(() => {
+            // fallback
+            const encodedText = encodeURIComponent(text);
+            window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
+          });
+        } else {
+          const encodedText = encodeURIComponent(text);
+          window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
+        }
+        return;
+      }
+
+      const encoded = encodeURIComponent(text);
+
+      if (kind === 'telegram') {
+        window.open(`https://t.me/share/url?url=&text=${encoded}`, '_blank');
+        return;
+      }
+
+      if (kind === 'whatsapp') {
+        window.open(`https://wa.me/?text=${encoded}`, '_blank');
+        return;
+      }
+
+      if (kind === 'viber') {
+        window.open(`viber://forward?text=${encoded}`, '_blank');
+        return;
+      }
+    }
+
+    // =========================
+    // ДЕЙСТВИЯ
+    // =========================
+    function addRow() {
+      const item = { id: uid(), productId: '', quantity: 0, qtyText: '' };
+      state.orderItems.push(item);
+      appendRowToDom(item);
+      updateFooterTotals();
+      updateHeaderResetVisibility();
+      updateSelectedCount();
+    }
+
+    function removeRow(id) {
+      state.orderItems = state.orderItems.filter(x => x.id !== id);
+      const el = document.getElementById(`row-${id}`);
+      if (el) el.remove();
+      updateFooterTotals();
+      updateHeaderResetVisibility();
+      updateSelectedCount();
+    }
+
+    async function handleCopy() {
+      if (state.orderItems.length === 0) return;
+      const text = generateMessageText();
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('success', 'Текст скопирован');
+      } catch (e) {
+        setStatus('error', 'Не удалось скопировать');
+      }
+    }
+
+    function handleReset() {
+      if (window.confirm('Очистить форму заявки?')) {
+        state.orderItems = [];
+        state.orderComment = '';
+        state.clientName = '';
+        state.status = null;
+
+        // очистка DOM списка
+        const list = document.getElementById('rows');
+        if (list) list.innerHTML = '';
+
+        // очистка полей
+        const c = document.getElementById('clientField');
+        if (c) c.value = '';
+        const com = document.getElementById('commentField');
+        if (com) com.value = '';
+
+        updateFooterTotals();
+        updateHeaderResetVisibility();
+        updateSelectedCount();
+        renderStatusOnly();
+      }
+    }
+
+    // =========================
+    // РЕНДЕР (каркас — один раз)
+    // =========================
+    function render() {
+      const app = document.getElementById('app');
+
+      app.innerHTML = `
+        <div class="min-h-screen max-w-lg mx-auto pb-48 bg-slate-50/50">
+          <header class="bg-white sticky top-0 z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-2">
+              <div class="bg-green-600 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-green-100">Ф</div>
+              <h1 class="font-bold text-slate-800 tracking-tight text-lg">Заявки ФерМама</h1>
+            </div>
+            <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
+              ${iconSvg('rotateCcw', 14)} Очистить
+            </button>
+          </header>
+
+          <main class="px-4 py-6 space-y-6">
+            <div id="statusBox"></div>
+
+            <section class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
+                  ${iconSvg('user', 12, 'text-green-600')} Менеджер
+                </label>
+                <div class="relative">
+                  <select
+                    id="managerSelect"
+                    class="w-full appearance-none bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all cursor-pointer"
+                  >
+                    ${MANAGERS.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
+                  </select>
+                  <div class="absolute right-4 top-3.5 text-slate-300 pointer-events-none">
+                    ${iconSvg('chevronDown', 16)}
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
+                  ${iconSvg('store', 12, 'text-green-600')} Клиент
+                </label>
+
+                <!-- ВАЖНО: делаем textarea (как Комментарий), чтобы ввод не “исчезал”.
+                     Визуальный размер не меняем: повторяем те же классы, высота та же, без resize. -->
+                <textarea
+                  id="clientField"
+                  rows="1"
+                  placeholder="Название магазина / ФИО"
+                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all resize-none overflow-hidden"
+                ></textarea>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
+                  ${iconSvg('calendar', 12, 'text-green-600')} Дата приёма
+                </label>
+                <input
+                  id="dateField"
+                  type="date"
+                  value="${state.orderDate}"
+                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                />
+              </div>
+            </section>
+
+            <section class="space-y-3">
+              <div class="flex items-center justify-between px-1">
+                <h3 class="font-black text-slate-800 text-sm tracking-tight uppercase">Состав заявки</h3>
+                <span id="selectedCount" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black">0 ПОЗ.</span>
+              </div>
+
+              <div id="rows" class="space-y-3"></div>
+
+              <button
+                id="addRowBtn"
+                class="w-full flex items-center justify-center gap-2 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
+                type="button"
+                style="padding-top: 18px; padding-bottom: 18px;"
+              >
+                ${iconSvg('plus', 18)} Добавить товар
+              </button>
+            </section>
+
+            <section class="space-y-1">
+              <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider px-1">
+                ${iconSvg('messageSquare', 12, 'text-green-600')} Комментарий
+              </label>
+              <textarea
+                id="commentField"
+                placeholder="Дополнительная информация к заказу..."
+                class="w-full min-h-[100px] bg-white border border-slate-100 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all shadow-sm resize-none"
+              ></textarea>
+            </section>
+          </main>
+
+          <footer class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-100 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 rounded-t-[2.5rem]">
+            <div class="flex items-center justify-between mb-4 px-2">
+              <span class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Итого к оплате</span>
+              <span class="text-2xl font-black text-slate-800">
+                <span id="totalSum">0</span> <span class="text-lg font-bold text-green-600">₽</span>
+              </span>
+            </div>
+
+            <div class="flex gap-2">
+              <button
+                id="copyBtn"
+                class="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all active:scale-95"
+                type="button"
+                title="Скопировать текст"
+              >
+                ${iconSvg('copy', 20)}
+              </button>
+
+              <div class="flex-[3] relative">
+                <button
+                  id="sendBtn"
+                  class="w-full h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg bg-[#24A1DE] hover:bg-[#1e8dbf] shadow-xl shadow-blue-100 transition-all active:scale-95"
+                  type="button"
+                >
+                  ОТПРАВИТЬ ${iconSvg('share', 20)}
+                </button>
+
+                <div id="sendMenu" class="hidden absolute bottom-[64px] left-0 right-0 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden">
+                  <button data-send="share" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    ${iconSvg('share', 18)} Поделиться… (выбор мессенджера)
+                  </button>
+                  <button data-send="telegram" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    ${iconSvg('tg', 18)} Telegram
+                  </button>
+                  <button data-send="whatsapp" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    ${iconSvg('wa', 18)} WhatsApp
+                  </button>
+                  <button data-send="viber" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    ${iconSvg('vb', 18)} Viber
+                  </button>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </div>
+      `;
+
+      bindStaticEvents();
+      updateFooterTotals();
+      updateHeaderResetVisibility();
+      updateSelectedCount();
+      renderStatusOnly();
+    }
+
+    // =========================
+    // РЯД (создаётся и обновляется точечно)
+    // =========================
+    function appendRowToDom(item) {
+      const rows = document.getElementById('rows');
+
+      const el = document.createElement('div');
+      el.id = `row-${item.id}`;
+      el.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3';
+
+      const optionsHtml = [
+        `<option value="" disabled hidden ${!item.productId ? 'selected' : ''}>Выберите товар...</option>`,
+        ...SORTED_PRODUCTS.map(pp => `<option value="${pp.id}" ${pp.id === item.productId ? 'selected' : ''}>${escapeHtml(pp.name)}</option>`)
+      ].join('');
+
+      el.innerHTML = `
+        <div class="flex justify-between items-start gap-2">
+          <div class="flex-1">
+            <label class="text-[10px] text-slate-400 font-bold uppercase mb-1 block">Товар</label>
+            <div class="relative">
+              <select
+                class="w-full text-sm font-semibold border-none focus:ring-0 p-0 bg-transparent cursor-pointer appearance-none ${!item.productId ? 'text-slate-300' : 'text-slate-800'}"
+                data-row="product"
+              >
+                ${optionsHtml}
+              </select>
+            </div>
+          </div>
+          <button
+            class="text-slate-300 hover:text-red-500 p-1 transition-colors"
+            type="button"
+            aria-label="Удалить строку"
+            data-row="remove"
+          >
+            ${iconSvg('trash', 18)}
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 border-t border-slate-50 pt-3">
+          <div>
+            <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Цена</label>
+            <div class="text-sm font-medium text-slate-500" data-row="price">—</div>
+          </div>
+          <div>
+            <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Кол-во</label>
+            <input
+              type="text"
+              inputmode="decimal"
+              placeholder="0"
+              class="w-full text-sm font-bold bg-slate-50 disabled:bg-slate-100 disabled:opacity-50 rounded-lg px-2 py-1 border border-slate-200 focus:outline-none focus:border-green-500"
+              data-row="qty"
+              disabled
+              value=""
+            />
+          </div>
+          <div class="text-right">
+            <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Сумма</label>
+            <div class="text-sm font-bold text-green-600" data-row="sum">0 ₽</div>
+          </div>
+        </div>
+      `;
+
+      rows.appendChild(el);
+
+      // привязки
+      const sel = el.querySelector('[data-row="product"]');
+      const btnRemove = el.querySelector('[data-row="remove"]');
+      const qtyInput = el.querySelector('[data-row="qty"]');
+      const priceBox = el.querySelector('[data-row="price"]');
+      const sumBox = el.querySelector('[data-row="sum"]');
+
+      btnRemove.addEventListener('click', () => removeRow(item.id));
+
+      sel.addEventListener('change', (e) => {
+        const productId = e.target.value;
+        const p = productById(productId);
+
+        const rowItem = state.orderItems.find(x => x.id === item.id);
+        if (!rowItem) return;
+
+        rowItem.productId = productId;
+        rowItem.quantity = p && p.unit === 'кг' ? 1.0 : 1;
+        rowItem.qtyText = String(rowItem.quantity);
+
+        // включаем ввод + обновляем UI
+        qtyInput.disabled = false;
+        qtyInput.value = rowItem.qtyText;
+
+        priceBox.textContent = p ? `${p.price}₽ / ${p.unit}` : '—';
+        updateRowSum(item.id);
+        updateFooterTotals();
+        updateHeaderResetVisibility();
+        updateSelectedCount();
+
+        // цвет текста селекта
+        sel.classList.remove('text-slate-300');
+        sel.classList.add('text-slate-800');
+      });
+
+      qtyInput.addEventListener('input', (e) => {
+        const rowItem = state.orderItems.find(x => x.id === item.id);
+        if (!rowItem) return;
+
+        const p = productById(rowItem.productId);
+        let valStr = String(e.target.value || '').replace(',', '.');
+
+        // Строго как в App.tsx: разрешаем только цифры и одну точку
+        if (valStr !== '' && !/^\d*\.?\d*$/.test(valStr)) {
+          // откат к предыдущему корректному
+          e.target.value = rowItem.qtyText || '';
+          return;
+        }
+
+        rowItem.qtyText = valStr;
+
+        const parsed = parseFloat(valStr);
+        const num = (isNaN(parsed) ? 0 : parsed);
+        rowItem.quantity = (p && p.unit === 'шт') ? Math.floor(num) : num;
+
+        // ВАЖНО: не перерисовываем всё — только суммы
+        updateRowSum(item.id);
+        updateFooterTotals();
+        updateHeaderResetVisibility();
+      });
+
+      // первичное состояние
+      updateRowMeta(item.id);
+      updateRowSum(item.id);
+    }
+
+    function updateRowMeta(rowId) {
+      const item = state.orderItems.find(x => x.id === rowId);
+      if (!item) return;
+
+      const row = document.getElementById(`row-${rowId}`);
+      if (!row) return;
+
+      const p = productById(item.productId);
+      const priceBox = row.querySelector('[data-row="price"]');
+      const qtyInput = row.querySelector('[data-row="qty"]');
+
+      if (p) {
+        priceBox.textContent = `${p.price}₽ / ${p.unit}`;
+        qtyInput.disabled = false;
+      } else {
+        priceBox.textContent = '—';
+        qtyInput.disabled = true;
+      }
+    }
+
+    function updateRowSum(rowId) {
+      const item = state.orderItems.find(x => x.id === rowId);
+      if (!item) return;
+
+      const row = document.getElementById(`row-${rowId}`);
+      if (!row) return;
+
+      const p = productById(item.productId);
+      const sumBox = row.querySelector('[data-row="sum"]');
+
+      const sum = p ? (Number(item.quantity || 0) * p.price) : 0;
+      sumBox.textContent = `${formatRuMoney(sum)} ₽`;
+    }
+
+    // =========================
+    // UI: статус/итоги/счётчик/кнопка очистить
+    // =========================
+    function renderStatusOnly() {
+      const box = document.getElementById('statusBox');
+      if (!box) return;
+
+      if (!state.status) {
+        box.innerHTML = '';
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="flex items-center gap-3 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300 ${
+          state.status.type === 'success'
+            ? 'bg-green-50 border-green-100 text-green-700'
+            : 'bg-red-50 border-red-100 text-red-700'
+        }">
+          ${state.status.type === 'success' ? iconSvg('check', 18) : iconSvg('alert', 18)}
+          <span class="text-sm font-medium">${escapeHtml(state.status.msg)}</span>
+        </div>
+      `;
+    }
+
+    function updateFooterTotals() {
+      const el = document.getElementById('totalSum');
+      if (!el) return;
+      el.textContent = formatRuMoney(totalSum());
+    }
+
+    function updateSelectedCount() {
+      const el = document.getElementById('selectedCount');
+      if (!el) return;
+      const selectedCount = state.orderItems.filter(i => i.productId).length;
+      el.textContent = `${selectedCount} ПОЗ.`;
+    }
+
+    function updateHeaderResetVisibility() {
+      const btn = document.getElementById('resetBtn');
+      if (!btn) return;
+      const show = (state.orderItems.length > 0 || String(state.clientName || '').trim() || String(state.orderComment || '').trim());
+      btn.classList.toggle('hidden', !show);
+    }
+
+    // =========================
+    // СОБЫТИЯ (каркас)
+    // =========================
+    function bindStaticEvents() {
+      // manager
+      const managerSelect = document.getElementById('managerSelect');
+      managerSelect.value = state.selectedManager;
+      managerSelect.addEventListener('change', (e) => {
+        state.selectedManager = e.target.value;
+      });
+
+      // client (не делаем render на каждый символ)
+      const clientField = document.getElementById('clientField');
+      clientField.addEventListener('input', (e) => {
+        state.clientName = e.target.value;
+        updateHeaderResetVisibility();
+      });
+
+      // date
+      const dateField = document.getElementById('dateField');
+      dateField.value = state.orderDate;
+      dateField.addEventListener('change', (e) => {
+        state.orderDate = e.target.value;
+      });
+
+      // comment (как было: без перерендера страницы)
+      const commentField = document.getElementById('commentField');
+      commentField.addEventListener('input', (e) => {
+        state.orderComment = e.target.value;
+        updateHeaderResetVisibility();
+      });
+
+      // add row
+      document.getElementById('addRowBtn').addEventListener('click', addRow);
+
+      // copy
+      document.getElementById('copyBtn').addEventListener('click', handleCopy);
+
+      // reset
+      document.getElementById('resetBtn').addEventListener('click', handleReset);
+
+      // send menu toggle
+      const sendBtn = document.getElementById('sendBtn');
+      const menu = document.getElementById('sendMenu');
+
+      sendBtn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+      });
+
+      // click outside to close
+      document.addEventListener('click', (e) => {
+        const isInside = sendBtn.contains(e.target) || menu.contains(e.target);
+        if (!isInside) menu.classList.add('hidden');
+      });
+
+      // menu actions
+      menu.querySelectorAll('[data-send]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const kind = btn.getAttribute('data-send');
+          menu.classList.add('hidden');
+          openMessenger(kind);
+        });
+      });
+    }
+
+    // =========================
+    // Старт
+    // =========================
+    render();
+  </script>
 </body>
 </html>
