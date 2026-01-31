@@ -118,7 +118,7 @@
     });
 
     // =========================
-    // ИКОНКИ (SVG) — оставил как было в “одним файлом”
+    // ИКОНКИ (SVG)
     // =========================
     function iconSvg(name, size, extraClass) {
       const s = size || 18;
@@ -192,9 +192,10 @@
 
     function generateMessageText() {
       const dateFormatted = new Date(state.orderDate).toLocaleDateString('ru-RU');
-      let text = `Заявка ФерМама\n\n`;
+      const clientLine = String(state.clientName || '').trim() || 'Не указан';
+
+      let text = `Заявка\n${clientLine}\n\n`;
       text += `Менеджер: ${state.selectedManager}\n`;
-      text += `Клиент: ${state.clientName || 'Не указан'}\n`;
       text += `Дата: ${dateFormatted}\n\n`;
 
       const v = validItems();
@@ -203,8 +204,8 @@
         v.forEach((item, index) => {
           const p = productById(item.productId);
           if (p) {
-            const sum = Number(item.quantity || 0) * p.price;
-            text += `${index + 1}) ${p.name} — ${item.quantity} ${p.unit} × ${p.price} ₽ = ${formatRuMoney(sum)} ₽\n`;
+            // Жирным только: "Товар — N ед."
+            text += `${index + 1}) **${p.name} — ${item.quantity} ${p.unit}**\n`;
           }
         });
       }
@@ -213,7 +214,7 @@
         text += `\nКомментарий: ${String(state.orderComment).trim()}\n`;
       }
 
-      text += `\nИТОГОВАЯ СУММА: ${formatRuMoney(totalSum())} ₽`;
+      text += `\nИтого: ${formatRuMoney(totalSum())} ₽`;
       return text;
     }
 
@@ -247,11 +248,9 @@
       }
       const text = generateMessageText();
 
-      // Нативный Share (если доступен): покажет список мессенджеров
       if (kind === 'share') {
         if (navigator.share) {
           navigator.share({ text }).catch(() => {
-            // fallback
             const encodedText = encodeURIComponent(text);
             window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
           });
@@ -319,11 +318,9 @@
         state.clientName = '';
         state.status = null;
 
-        // очистка DOM списка
         const list = document.getElementById('rows');
         if (list) list.innerHTML = '';
 
-        // очистка полей
         const c = document.getElementById('clientField');
         if (c) c.value = '';
         const com = document.getElementById('commentField');
@@ -380,8 +377,6 @@
                   ${iconSvg('store', 12, 'text-green-600')} Клиент
                 </label>
 
-                <!-- ВАЖНО: делаем textarea (как Комментарий), чтобы ввод не “исчезал”.
-                     Визуальный размер не меняем: повторяем те же классы, высота та же, без resize. -->
                 <textarea
                   id="clientField"
                   rows="1"
@@ -413,7 +408,7 @@
 
               <button
                 id="addRowBtn"
-                class="w-full flex items-center justify-center gap-2 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
+                class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed border-green-400 rounded-2xl text-green-600 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
                 type="button"
                 style="padding-top: 18px; padding-bottom: 18px;"
               >
@@ -488,7 +483,7 @@
     }
 
     // =========================
-    // РЯД (создаётся и обновляется точечно)
+    // РЯД
     // =========================
     function appendRowToDom(item) {
       const rows = document.getElementById('rows');
@@ -508,7 +503,7 @@
             <label class="text-[10px] text-slate-400 font-bold uppercase mb-1 block">Товар</label>
             <div class="relative">
               <select
-                class="w-full text-sm font-semibold border-none focus:ring-0 p-0 bg-transparent cursor-pointer appearance-none ${!item.productId ? 'text-slate-300' : 'text-slate-800'}"
+                class="w-full text-sm font-semibold border-none focus:ring-0 p-0 bg-transparent cursor-pointer appearance-none ${!item.productId ? 'text-slate-500' : 'text-slate-800'}"
                 data-row="product"
               >
                 ${optionsHtml}
@@ -551,12 +546,10 @@
 
       rows.appendChild(el);
 
-      // привязки
       const sel = el.querySelector('[data-row="product"]');
       const btnRemove = el.querySelector('[data-row="remove"]');
       const qtyInput = el.querySelector('[data-row="qty"]');
       const priceBox = el.querySelector('[data-row="price"]');
-      const sumBox = el.querySelector('[data-row="sum"]');
 
       btnRemove.addEventListener('click', () => removeRow(item.id));
 
@@ -571,7 +564,6 @@
         rowItem.quantity = p && p.unit === 'кг' ? 1.0 : 1;
         rowItem.qtyText = String(rowItem.quantity);
 
-        // включаем ввод + обновляем UI
         qtyInput.disabled = false;
         qtyInput.value = rowItem.qtyText;
 
@@ -581,8 +573,7 @@
         updateHeaderResetVisibility();
         updateSelectedCount();
 
-        // цвет текста селекта
-        sel.classList.remove('text-slate-300');
+        sel.classList.remove('text-slate-500');
         sel.classList.add('text-slate-800');
       });
 
@@ -593,9 +584,7 @@
         const p = productById(rowItem.productId);
         let valStr = String(e.target.value || '').replace(',', '.');
 
-        // Строго как в App.tsx: разрешаем только цифры и одну точку
         if (valStr !== '' && !/^\d*\.?\d*$/.test(valStr)) {
-          // откат к предыдущему корректному
           e.target.value = rowItem.qtyText || '';
           return;
         }
@@ -606,13 +595,11 @@
         const num = (isNaN(parsed) ? 0 : parsed);
         rowItem.quantity = (p && p.unit === 'шт') ? Math.floor(num) : num;
 
-        // ВАЖНО: не перерисовываем всё — только суммы
         updateRowSum(item.id);
         updateFooterTotals();
         updateHeaderResetVisibility();
       });
 
-      // первичное состояние
       updateRowMeta(item.id);
       updateRowSum(item.id);
     }
@@ -699,44 +686,34 @@
     // СОБЫТИЯ (каркас)
     // =========================
     function bindStaticEvents() {
-      // manager
       const managerSelect = document.getElementById('managerSelect');
       managerSelect.value = state.selectedManager;
       managerSelect.addEventListener('change', (e) => {
         state.selectedManager = e.target.value;
       });
 
-      // client (не делаем render на каждый символ)
       const clientField = document.getElementById('clientField');
       clientField.addEventListener('input', (e) => {
         state.clientName = e.target.value;
         updateHeaderResetVisibility();
       });
 
-      // date
       const dateField = document.getElementById('dateField');
       dateField.value = state.orderDate;
       dateField.addEventListener('change', (e) => {
         state.orderDate = e.target.value;
       });
 
-      // comment (как было: без перерендера страницы)
       const commentField = document.getElementById('commentField');
       commentField.addEventListener('input', (e) => {
         state.orderComment = e.target.value;
         updateHeaderResetVisibility();
       });
 
-      // add row
       document.getElementById('addRowBtn').addEventListener('click', addRow);
-
-      // copy
       document.getElementById('copyBtn').addEventListener('click', handleCopy);
-
-      // reset
       document.getElementById('resetBtn').addEventListener('click', handleReset);
 
-      // send menu toggle
       const sendBtn = document.getElementById('sendBtn');
       const menu = document.getElementById('sendMenu');
 
@@ -744,13 +721,11 @@
         menu.classList.toggle('hidden');
       });
 
-      // click outside to close
       document.addEventListener('click', (e) => {
         const isInside = sendBtn.contains(e.target) || menu.contains(e.target);
         if (!isInside) menu.classList.add('hidden');
       });
 
-      // menu actions
       menu.querySelectorAll('[data-send]').forEach(btn => {
         btn.addEventListener('click', () => {
           const kind = btn.getAttribute('data-send');
