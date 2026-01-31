@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ФерМама - Заявки</title>
+  <title>Заявки ФерМама</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,7 +23,7 @@
 
   <script>
     // =========================
-    // ДАННЫЕ (из constants.ts)
+    // ДАННЫЕ (строго из constants.ts во вложении)
     // =========================
     const MANAGERS = [
       { name: 'Наталья Йошкар-Ола', clients: [] },
@@ -99,10 +99,9 @@
     ];
 
     // =========================
-    // СОРТИРОВКА (из App.tsx)
+    // СОРТИРОВКА (строго как в App.tsx)
     // =========================
     const getBaseName = (name) => name.replace(/\s*(?:(?:\d+\s*(?:гр|г|г))|вес\.)\s*$/i, '').trim();
-
     const getWeightInGram = (name) => {
       const match = name.match(/(\d+)\s*(?:гр|г|г)/i);
       return match ? parseInt(match[1], 10) : Infinity;
@@ -111,19 +110,10 @@
     const SORTED_PRODUCTS = [...PRODUCTS].sort((a, b) => {
       const baseA = getBaseName(a.name);
       const baseB = getBaseName(b.name);
-
-      // 1. По алфавиту базы названия
       if (baseA !== baseB) return baseA.localeCompare(baseB, 'ru');
-
-      // 2. Сначала штучные (шт), потом весовые (кг)
       if (a.unit === 'шт' && b.unit === 'кг') return -1;
       if (a.unit === 'кг' && b.unit === 'шт') return 1;
-
-      // 3. Если оба штучные, то по размеру фасовки (от меньшей к большей)
-      if (a.unit === 'шт' && b.unit === 'шт') {
-        return getWeightInGram(a.name) - getWeightInGram(b.name);
-      }
-
+      if (a.unit === 'шт' && b.unit === 'шт') return getWeightInGram(a.name) - getWeightInGram(b.name);
       return 0;
     });
 
@@ -141,8 +131,6 @@
           return `<svg ${common}><path ${stroke} d="M12 5v14M5 12h14"/></svg>`;
         case 'trash':
           return `<svg ${common}><path ${stroke} d="M3 6h18"/><path ${stroke} d="M8 6V4h8v2"/><path ${stroke} d="M19 6l-1 14H6L5 6"/><path ${stroke} d="M10 11v6"/><path ${stroke} d="M14 11v6"/></svg>`;
-        case 'send':
-          return `<svg ${common}><path ${stroke} d="M22 2L11 13"/><path ${stroke} d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>`;
         case 'alert':
           return `<svg ${common}><path ${stroke} d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path ${stroke} d="M12 9v4"/><path ${stroke} d="M12 17h.01"/></svg>`;
         case 'check':
@@ -163,37 +151,35 @@
           return `<svg ${common}><path ${stroke} d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>`;
         case 'share':
           return `<svg ${common}><path ${stroke} d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path ${stroke} d="M16 6l-4-4-4 4"/><path ${stroke} d="M12 2v13"/></svg>`;
+        case 'tg':
+          return `<svg ${common}><path ${stroke} d="M22 2L11 13"/><path ${stroke} d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>`;
+        case 'wa':
+          return `<svg ${common}><path ${stroke} d="M20 12a8 8 0 1 1-3.2-6.4"/><path ${stroke} d="M8.5 9.5c1.2 2.3 3.7 4.6 6 5.2"/><path ${stroke} d="M15.5 15.5l-1.7.7a1 1 0 0 1-1-.2l-1.2-.9"/><path ${stroke} d="M9 8.7l.7-1.7a1 1 0 0 1 .8-.6h.3"/></svg>`;
+        case 'vb':
+          return `<svg ${common}><path ${stroke} d="M21 11.5c0 5-4.4 9-9.8 9-1.2 0-2.4-.2-3.5-.6L3 21l1.3-4.2c-.5-1-.8-2.1-.8-3.3 0-5 4.4-9 9.8-9S21 6.5 21 11.5z"/></svg>`;
         default:
           return '';
       }
     }
 
     // =========================
-    // СОСТОЯНИЕ (как в App.tsx)
+    // СОСТОЯНИЕ
     // =========================
     const state = {
       selectedManager: MANAGERS[0].name,
       clientName: '',
       orderDate: new Date().toISOString().split('T')[0],
       orderComment: '',
-      orderItems: [], // {id, productId, quantity}
+      orderItems: [], // {id, productId, quantity, qtyText}
       status: null // {type:'success'|'error', msg:string}
     };
 
     // =========================
     // УТИЛИТЫ
     // =========================
-    function uid() {
-      return Math.random().toString(36).substr(2, 9);
-    }
-
-    function productById(id) {
-      return PRODUCTS.find(p => p.id === id) || null;
-    }
-
-    function formatRuMoney(n) {
-      return Number(n || 0).toLocaleString('ru-RU');
-    }
+    function uid() { return Math.random().toString(36).substr(2, 9); }
+    function productById(id) { return PRODUCTS.find(p => p.id === id) || null; }
+    function formatRuMoney(n) { return Number(n || 0).toLocaleString('ru-RU'); }
 
     function totalSum() {
       return state.orderItems.reduce((acc, item) => {
@@ -202,15 +188,28 @@
       }, 0);
     }
 
-    function validItems() {
-      return state.orderItems.filter(i => i.productId !== '');
-    }
+    function validItems() { return state.orderItems.filter(i => i.productId !== ''); }
 
-    function generateMessageText() {
+    // =========================
+    // ✅ ТЕКСТ СООБЩЕНИЯ (ИСПРАВЛЕНО)
+    // - жирный: только "Товар — N ед."
+    // - цена и сумма возвращены
+    // - формат жирного разный для WA/Viber и Telegram
+    // =========================
+    function generateMessageText(target) {
       const dateFormatted = new Date(state.orderDate).toLocaleDateString('ru-RU');
-      let text = `Заявка\n\n`;
+      const clientLine = String(state.clientName || '').trim() || 'Не указан';
+
+      const isTelegram = target === 'telegram';
+      const isWhatsApp = target === 'whatsapp';
+      const isViber = target === 'viber';
+
+      // WhatsApp / Viber часто понимают *жирный*, Telegram понимает **жирный**
+      const bOpen = (isWhatsApp || isViber) ? '*' : (isTelegram ? '**' : '');
+      const bClose = (isWhatsApp || isViber) ? '*' : (isTelegram ? '**' : '');
+
+      let text = `ЗАЯВКА\n${clientLine}\n\n`;
       text += `Менеджер: ${state.selectedManager}\n`;
-      text += `Клиент: ${state.clientName || 'Не указан'}\n`;
       text += `Дата: ${dateFormatted}\n\n`;
 
       const v = validItems();
@@ -220,7 +219,15 @@
           const p = productById(item.productId);
           if (p) {
             const sum = Number(item.quantity || 0) * p.price;
-            text += `${index + 1}) ${p.name} — ${item.quantity} ${p.unit} × ${p.price} ₽ = ${formatRuMoney(sum)} ₽\n`;
+
+            const boldPart = `${p.name} — ${item.quantity} ${p.unit}`;
+            // ✅ Жирный только "товар — количество", дальше цена и сумма обычным
+            if (bOpen) {
+              text += `${index + 1}) ${bOpen}${boldPart}${bClose} × ${p.price} ₽ = ${formatRuMoney(sum)} ₽\n`;
+            } else {
+              // для share (если куда-то не поддерживает форматирование) — без жирного
+              text += `${index + 1}) ${boldPart} × ${p.price} ₽ = ${formatRuMoney(sum)} ₽\n`;
+            }
           }
         });
       }
@@ -229,315 +236,8 @@
         text += `\nКомментарий: ${String(state.orderComment).trim()}\n`;
       }
 
-      text += `\nИТОГОВАЯ СУММА: ${formatRuMoney(totalSum())} ₽`;
+      text += `\nИтого: ${formatRuMoney(totalSum())} ₽`;
       return text;
-    }
-
-    function setStatus(type, msg) {
-      state.status = { type, msg };
-      render();
-      if (type === 'success') {
-        setTimeout(() => {
-          state.status = null;
-          render();
-        }, 3000);
-      }
-    }
-
-    // =========================
-    // ДЕЙСТВИЯ (как в App.tsx)
-    // =========================
-    function addRow() {
-      state.orderItems = [
-        ...state.orderItems,
-        { id: uid(), productId: '', quantity: 0 }
-      ];
-      render();
-    }
-
-    function removeRow(id) {
-      state.orderItems = state.orderItems.filter(item => item.id !== id);
-      render();
-    }
-
-    function updateItem(id, updates) {
-      state.orderItems = state.orderItems.map(item => item.id === id ? Object.assign({}, item, updates) : item);
-      render();
-    }
-
-    async function handleCopy() {
-      if (state.orderItems.length === 0) return;
-      const text = generateMessageText();
-      try {
-        await navigator.clipboard.writeText(text);
-        setStatus('success', 'Текст скопирован');
-      } catch (e) {
-        setStatus('error', 'Не удалось скопировать');
-      }
-    }
-
-    async function handleShare() {
-      if (state.orderItems.length === 0 || state.orderItems.every(i => !i.productId)) {
-        setStatus('error', 'Добавьте товары в заявку');
-        return;
-      }
-
-      const text = generateMessageText();
-
-      // Web Share API (системное "Поделиться…")
-      if (navigator.share) {
-        try {
-          await navigator.share({ text });
-          setStatus('success', 'Отправлено через "Поделиться…"');
-        } catch (e) {
-          // пользователь мог нажать "Отмена" — не считаем ошибкой, просто молчим
-        }
-        return;
-      }
-
-      // Фоллбек: копируем в буфер
-      await handleCopy();
-    }
-
-    function handleSendTelegram() {
-      if (state.orderItems.length === 0 || state.orderItems.every(i => !i.productId)) {
-        setStatus('error', 'Добавьте товары в заявку');
-        return;
-      }
-      const text = generateMessageText();
-      const encodedText = encodeURIComponent(text);
-      window.open(`https://t.me/share/url?text=${encodedText}`, '_blank');
-    }
-
-    function handleReset() {
-      if (window.confirm('Очистить форму заявки?')) {
-        state.orderItems = [];
-        state.orderComment = '';
-        state.clientName = '';
-        state.status = null;
-        render();
-      }
-    }
-
-    // =========================
-    // РЕНДЕР
-    // =========================
-    function rowHtml(item) {
-      const p = productById(item.productId);
-      const sum = p ? Number(item.quantity || 0) * p.price : 0;
-
-      const options = [
-        `<option value="" disabled hidden ${!item.productId ? 'selected' : ''}>Выберите товар...</option>`,
-        ...SORTED_PRODUCTS.map(pp => `<option value="${pp.id}" ${pp.id === item.productId ? 'selected' : ''}>${pp.name}</option>`)
-      ].join('');
-
-      const qtyStep = (p && p.unit === 'кг') ? '0.1' : '1';
-      const qtyMin = '0';
-      const qtyDisabled = !item.productId ? 'disabled' : '';
-      const qtyInputMode = (p && p.unit === 'кг') ? 'decimal' : 'numeric';
-      const qtyVal = (item.quantity ? item.quantity : '');
-
-      return `
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
-          <div class="flex justify-between items-start gap-2">
-            <div class="flex-1">
-              <label class="text-[10px] text-slate-400 font-bold uppercase mb-1 block">Товар</label>
-              <div class="relative">
-                <select
-                  data-action="productChange"
-                  data-id="${item.id}"
-                  class="w-full text-sm font-semibold border-none focus:ring-0 p-0 bg-transparent cursor-pointer appearance-none ${!item.productId ? 'text-slate-300' : 'text-slate-800'}"
-                >
-                  ${options}
-                </select>
-              </div>
-            </div>
-            <button
-              data-action="removeRow"
-              data-id="${item.id}"
-              class="text-slate-300 hover:text-red-500 p-1 transition-colors"
-              type="button"
-              aria-label="Удалить строку"
-            >
-              ${iconSvg('trash', 18)}
-            </button>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 border-t border-slate-50 pt-3">
-            <div>
-              <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Цена</label>
-              <div class="text-sm font-medium text-slate-500">
-                ${p ? `${p.price}₽ / ${p.unit}` : '—'}
-              </div>
-            </div>
-            <div>
-              <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Кол-во</label>
-              <input
-                data-action="qtyChange"
-                data-id="${item.id}"
-                type="number"
-                step="${qtyStep}"
-                min="${qtyMin}"
-                ${qtyDisabled}
-                inputmode="${qtyInputMode}"
-                value="${qtyVal}"
-                placeholder="0"
-                class="w-full text-sm font-bold bg-slate-50 disabled:bg-slate-100 disabled:opacity-50 rounded-lg px-2 py-1 border border-slate-200 focus:outline-none focus:border-green-500"
-              />
-            </div>
-            <div class="text-right">
-              <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Сумма</label>
-              <div class="text-sm font-bold text-green-600">
-                ${formatRuMoney(sum)} ₽
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function render() {
-      const app = document.getElementById('app');
-
-      const showReset = (state.orderItems.length > 0 || state.clientName || state.orderComment);
-
-      const statusHtml = state.status ? `
-        <div class="flex items-center gap-3 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300 ${
-          state.status.type === 'success'
-            ? 'bg-green-50 border-green-100 text-green-700'
-            : 'bg-red-50 border-red-100 text-red-700'
-        }">
-          ${state.status.type === 'success' ? iconSvg('check', 18) : iconSvg('alert', 18)}
-          <span class="text-sm font-medium">${state.status.msg}</span>
-        </div>
-      ` : '';
-
-      const selectedCount = state.orderItems.filter(i => i.productId).length;
-
-      app.innerHTML = `
-        <div class="min-h-screen max-w-lg mx-auto pb-48 bg-slate-50/50">
-          <header class="bg-white sticky top-0 z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center shadow-sm">
-            <div class="flex items-center gap-2">
-              <div class="bg-green-600 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-green-100">Ф</div>
-              <h1 class="font-bold text-slate-800 tracking-tight text-lg">ФерМама</h1>
-            </div>
-            ${showReset ? `
-              <button data-action="reset" class="flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
-                ${iconSvg('rotateCcw', 14)} Очистить
-              </button>
-            ` : ''}
-          </header>
-
-          <main class="px-4 py-6 space-y-6">
-            ${statusHtml}
-
-            <section class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
-              <div class="space-y-1">
-                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('user', 12, 'text-green-600')} Менеджер
-                </label>
-                <div class="relative">
-                  <select
-                    data-action="managerChange"
-                    class="w-full appearance-none bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all cursor-pointer"
-                  >
-                    ${MANAGERS.map(m => `<option value="${m.name}" ${m.name === state.selectedManager ? 'selected' : ''}>${m.name}</option>`).join('')}
-                  </select>
-                  <div class="absolute right-4 top-3.5 text-slate-300 pointer-events-none">
-                    ${iconSvg('chevronDown', 16)}
-                  </div>
-                </div>
-              </div>
-
-              <div class="space-y-1">
-                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('store', 12, 'text-green-600')} Клиент
-                </label>
-                <input
-                  data-action="clientChange"
-                  type="text"
-                  placeholder="Название магазина / ФИО"
-                  value="${escapeHtml(state.clientName)}"
-                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
-                />
-              </div>
-
-              <div class="space-y-1">
-                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('calendar', 12, 'text-green-600')} Дата приёма
-                </label>
-                <input
-                  data-action="dateChange"
-                  type="date"
-                  value="${state.orderDate}"
-                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
-                />
-              </div>
-            </section>
-
-            <section class="space-y-3">
-              <div class="flex items-center justify-between px-1">
-                <h3 class="font-black text-slate-800 text-sm tracking-tight uppercase">Состав заявки</h3>
-                <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black">
-                  ${selectedCount} ПОЗ.
-                </span>
-              </div>
-
-              <div class="space-y-3">
-                ${state.orderItems.map(rowHtml).join('')}
-              </div>
-
-              <button
-                data-action="addRow"
-                class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
-                type="button"
-              >
-                ${iconSvg('plus', 18)} Добавить товар
-              </button>
-            </section>
-
-            <section class="space-y-1">
-              <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider px-1">
-                ${iconSvg('messageSquare', 12, 'text-green-600')} Комментарий
-              </label>
-              <textarea
-                data-action="commentChange"
-                placeholder="Дополнительная информация к заказу..."
-                class="w-full min-h-[100px] bg-white border border-slate-100 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all shadow-sm resize-none"
-              >${escapeHtml(state.orderComment)}</textarea>
-            </section>
-          </main>
-
-          <footer class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-100 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 rounded-t-[2.5rem]">
-            <div class="flex items-center justify-between mb-4 px-2">
-              <span class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Итого к оплате</span>
-              <span class="text-2xl font-black text-slate-800">
-                ${formatRuMoney(totalSum())} <span class="text-lg font-bold text-green-600">₽</span>
-              </span>
-            </div>
-
-            <div class="flex gap-2">
-              <button
-                data-action="share"
-                class="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all active:scale-95"
-                type="button"
-                title="Поделиться…"
-              >
-                ${iconSvg('share', 20)}
-              </button>
-              <button
-                data-action="sendTelegram"
-                class="flex-[3] h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg bg-[#24A1DE] hover:bg-[#1e8dbf] shadow-xl shadow-blue-100 transition-all active:scale-95"
-                type="button"
-              >
-                TELEGRAM ${iconSvg('send', 20)}
-              </button>
-            </div>
-          </footer>
-        </div>
-      `;
-
-      bindEvents();
     }
 
     function escapeHtml(str) {
@@ -549,78 +249,516 @@
         .replace(/'/g, '&#039;');
     }
 
-    function bindEvents() {
+    function setStatus(type, msg) {
+      state.status = { type, msg };
+      renderStatusOnly();
+      if (type === 'success') {
+        setTimeout(() => {
+          state.status = null;
+          renderStatusOnly();
+        }, 3000);
+      }
+    }
+
+    // =========================
+    // МЕССЕНДЖЕРЫ (кнопка "Отправить")
+    // =========================
+    function openMessenger(kind) {
+      if (state.orderItems.length === 0 || state.orderItems.every(i => !i.productId)) {
+        setStatus('error', 'Добавьте товары в заявку');
+        return;
+      }
+
+      // ✅ теперь текст зависит от мессенджера
+      const text = generateMessageText(kind);
+
+      if (kind === 'share') {
+        if (navigator.share) {
+          navigator.share({ text }).catch(() => {
+            const encodedText = encodeURIComponent(text);
+            window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
+          });
+        } else {
+          const encodedText = encodeURIComponent(text);
+          window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
+        }
+        return;
+      }
+
+      const encoded = encodeURIComponent(text);
+
+      if (kind === 'telegram') {
+        window.open(`https://t.me/share/url?url=&text=${encoded}`, '_blank');
+        return;
+      }
+
+      if (kind === 'whatsapp') {
+        window.open(`https://wa.me/?text=${encoded}`, '_blank');
+        return;
+      }
+
+      if (kind === 'viber') {
+        window.open(`viber://forward?text=${encoded}`, '_blank');
+        return;
+      }
+    }
+
+    // =========================
+    // ДЕЙСТВИЯ
+    // =========================
+    function addRow() {
+      const item = { id: uid(), productId: '', quantity: 0, qtyText: '' };
+      state.orderItems.push(item);
+      appendRowToDom(item);
+      updateFooterTotals();
+      updateHeaderResetVisibility();
+      updateSelectedCount();
+    }
+
+    function removeRow(id) {
+      state.orderItems = state.orderItems.filter(x => x.id !== id);
+      const el = document.getElementById(`row-${id}`);
+      if (el) el.remove();
+      updateFooterTotals();
+      updateHeaderResetVisibility();
+      updateSelectedCount();
+    }
+
+    async function handleCopy() {
+      if (state.orderItems.length === 0) return;
+
+      // ✅ для копирования делаю "share"-версию (без риска, что мессенджер покажет **)
+      const text = generateMessageText('share');
+
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('success', 'Текст скопирован');
+      } catch (e) {
+        setStatus('error', 'Не удалось скопировать');
+      }
+    }
+
+    function handleReset() {
+      if (window.confirm('Очистить форму заявки?')) {
+        state.orderItems = [];
+        state.orderComment = '';
+        state.clientName = '';
+        state.status = null;
+
+        const list = document.getElementById('rows');
+        if (list) list.innerHTML = '';
+
+        const c = document.getElementById('clientField');
+        if (c) c.value = '';
+        const com = document.getElementById('commentField');
+        if (com) com.value = '';
+
+        updateFooterTotals();
+        updateHeaderResetVisibility();
+        updateSelectedCount();
+        renderStatusOnly();
+      }
+    }
+
+    // =========================
+    // РЕНДЕР (каркас — один раз)
+    // =========================
+    function render() {
       const app = document.getElementById('app');
 
-      app.querySelectorAll('[data-action]').forEach(el => {
-        const action = el.getAttribute('data-action');
+      app.innerHTML = `
+        <div class="min-h-screen max-w-lg mx-auto pb-48 bg-slate-50/50">
+          <header class="bg-white sticky top-0 z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-2">
+              <div class="bg-green-600 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-green-100">Ф</div>
+              <h1 class="font-bold text-slate-800 tracking-tight text-lg">Заявки ФерМама</h1>
+            </div>
+            <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
+              ${iconSvg('rotateCcw', 14)} Очистить
+            </button>
+          </header>
 
-        if (action === 'addRow') el.onclick = addRow;
-        if (action === 'reset') el.onclick = handleReset;
+          <main class="px-4 py-6 space-y-6">
+            <div id="statusBox"></div>
 
-        if (action === 'share') el.onclick = handleShare;
-        if (action === 'sendTelegram') el.onclick = handleSendTelegram;
+            <section class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
+                  ${iconSvg('user', 12, 'text-green-600')} Менеджер
+                </label>
+                <div class="relative">
+                  <select
+                    id="managerSelect"
+                    class="w-full appearance-none bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all cursor-pointer"
+                  >
+                    ${MANAGERS.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
+                  </select>
+                  <div class="absolute right-4 top-3.5 text-slate-300 pointer-events-none">
+                    ${iconSvg('chevronDown', 16)}
+                  </div>
+                </div>
+              </div>
 
-        if (action === 'removeRow') {
-          el.onclick = () => removeRow(el.getAttribute('data-id'));
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
+                  ${iconSvg('store', 12, 'text-green-600')} Клиент
+                </label>
+
+                <textarea
+                  id="clientField"
+                  rows="1"
+                  placeholder="Название магазина / ФИО"
+                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all resize-none overflow-hidden"
+                ></textarea>
+              </div>
+
+              <div class="space-y-1">
+                <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
+                  ${iconSvg('calendar', 12, 'text-green-600')} Дата приёма
+                </label>
+                <input
+                  id="dateField"
+                  type="date"
+                  value="${state.orderDate}"
+                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                />
+              </div>
+            </section>
+
+            <section class="space-y-3">
+              <div class="flex items-center justify-between px-1">
+                <h3 class="font-black text-slate-800 text-sm tracking-tight uppercase">Состав заявки</h3>
+                <span id="selectedCount" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black">0 ПОЗ.</span>
+              </div>
+
+              <div id="rows" class="space-y-3"></div>
+
+              <button
+                id="addRowBtn"
+                class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed border-green-400 rounded-2xl text-green-600 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
+                type="button"
+                style="padding-top: 18px; padding-bottom: 18px;"
+              >
+                ${iconSvg('plus', 18)} Добавить товар
+              </button>
+            </section>
+
+            <section class="space-y-1">
+              <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider px-1">
+                ${iconSvg('messageSquare', 12, 'text-green-600')} Комментарий
+              </label>
+              <textarea
+                id="commentField"
+                placeholder="Дополнительная информация к заказу..."
+                class="w-full min-h-[100px] bg-white border border-slate-100 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all shadow-sm resize-none"
+              ></textarea>
+            </section>
+          </main>
+
+          <footer class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-100 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 rounded-t-[2.5rem]">
+            <div class="flex items-center justify-between mb-4 px-2">
+              <span class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Итого к оплате</span>
+              <span class="text-2xl font-black text-slate-800">
+                <span id="totalSum">0</span> <span class="text-lg font-bold text-green-600">₽</span>
+              </span>
+            </div>
+
+            <div class="flex gap-2">
+              <button
+                id="copyBtn"
+                class="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all active:scale-95"
+                type="button"
+                title="Скопировать текст"
+              >
+                ${iconSvg('copy', 20)}
+              </button>
+
+              <div class="flex-[3] relative">
+                <button
+                  id="sendBtn"
+                  class="w-full h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg bg-[#24A1DE] hover:bg-[#1e8dbf] shadow-xl shadow-blue-100 transition-all active:scale-95"
+                  type="button"
+                >
+                  ОТПРАВИТЬ ${iconSvg('share', 20)}
+                </button>
+
+                <div id="sendMenu" class="hidden absolute bottom-[64px] left-0 right-0 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden">
+                  <button data-send="share" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    ${iconSvg('share', 18)} Поделиться… (выбор мессенджера)
+                  </button>
+                  <button data-send="telegram" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                    ${iconSvg('tg', 18)} Telegram
+                  </button>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </div>
+      `;
+
+      bindStaticEvents();
+      updateFooterTotals();
+      updateHeaderResetVisibility();
+      updateSelectedCount();
+      renderStatusOnly();
+    }
+
+    // =========================
+    // РЯД
+    // =========================
+    function appendRowToDom(item) {
+      const rows = document.getElementById('rows');
+
+      const el = document.createElement('div');
+      el.id = `row-${item.id}`;
+      el.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3';
+
+      const optionsHtml = [
+        `<option value="" disabled hidden ${!item.productId ? 'selected' : ''}>Выберите товар...</option>`,
+        ...SORTED_PRODUCTS.map(pp => `<option value="${pp.id}" ${pp.id === item.productId ? 'selected' : ''}>${escapeHtml(pp.name)}</option>`)
+      ].join('');
+
+      el.innerHTML = `
+        <div class="flex justify-between items-start gap-2">
+          <div class="flex-1">
+            <label class="text-[10px] text-slate-400 font-bold uppercase mb-1 block">Товар</label>
+            <div class="relative">
+              <select
+                class="w-full text-sm font-semibold border-none focus:ring-0 p-0 bg-transparent cursor-pointer appearance-none ${!item.productId ? 'text-slate-500' : 'text-slate-800'}"
+                data-row="product"
+              >
+                ${optionsHtml}
+              </select>
+            </div>
+          </div>
+          <button
+            class="text-slate-300 hover:text-red-500 p-1 transition-colors"
+            type="button"
+            aria-label="Удалить строку"
+            data-row="remove"
+          >
+            ${iconSvg('trash', 18)}
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4 border-t border-slate-50 pt-3">
+          <div>
+            <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Цена</label>
+            <div class="text-sm font-medium text-slate-500" data-row="price">—</div>
+          </div>
+          <div>
+            <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Кол-во</label>
+            <input
+              type="text"
+              inputmode="decimal"
+              placeholder="0"
+              class="w-full text-sm font-bold bg-slate-50 disabled:bg-slate-100 disabled:opacity-50 rounded-lg px-2 py-1 border border-slate-200 focus:outline-none focus:border-green-500"
+              data-row="qty"
+              disabled
+              value=""
+            />
+          </div>
+          <div class="text-right">
+            <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Сумма</label>
+            <div class="text-sm font-bold text-green-600" data-row="sum">0 ₽</div>
+          </div>
+        </div>
+      `;
+
+      rows.appendChild(el);
+
+      const sel = el.querySelector('[data-row="product"]');
+      const btnRemove = el.querySelector('[data-row="remove"]');
+      const qtyInput = el.querySelector('[data-row="qty"]');
+      const priceBox = el.querySelector('[data-row="price"]');
+
+      btnRemove.addEventListener('click', () => removeRow(item.id));
+
+      sel.addEventListener('change', (e) => {
+        const productId = e.target.value;
+        const p = productById(productId);
+
+        const rowItem = state.orderItems.find(x => x.id === item.id);
+        if (!rowItem) return;
+
+        rowItem.productId = productId;
+        rowItem.quantity = p && p.unit === 'кг' ? 1.0 : 1;
+        rowItem.qtyText = String(rowItem.quantity);
+
+        qtyInput.disabled = false;
+        qtyInput.value = rowItem.qtyText;
+
+        priceBox.textContent = p ? `${p.price}₽ / ${p.unit}` : '—';
+        updateRowSum(item.id);
+        updateFooterTotals();
+        updateHeaderResetVisibility();
+        updateSelectedCount();
+
+        sel.classList.remove('text-slate-500');
+        sel.classList.add('text-slate-800');
+      });
+
+      qtyInput.addEventListener('input', (e) => {
+        const rowItem = state.orderItems.find(x => x.id === item.id);
+        if (!rowItem) return;
+
+        const p = productById(rowItem.productId);
+        let valStr = String(e.target.value || '').replace(',', '.');
+
+        if (valStr !== '' && !/^\d*\.?\d*$/.test(valStr)) {
+          e.target.value = rowItem.qtyText || '';
+          return;
         }
 
-        if (action === 'managerChange') {
-          el.onchange = (e) => {
-            state.selectedManager = e.target.value;
-            render();
-          };
-        }
+        rowItem.qtyText = valStr;
 
-        if (action === 'clientChange') {
-          el.oninput = (e) => {
-            state.clientName = e.target.value;
-            render();
-          };
-        }
+        const parsed = parseFloat(valStr);
+        const num = (isNaN(parsed) ? 0 : parsed);
+        rowItem.quantity = (p && p.unit === 'шт') ? Math.floor(num) : num;
 
-        if (action === 'dateChange') {
-          el.onchange = (e) => {
-            state.orderDate = e.target.value;
-            render();
-          };
-        }
+        updateRowSum(item.id);
+        updateFooterTotals();
+        updateHeaderResetVisibility();
+      });
 
-        if (action === 'commentChange') {
-          el.oninput = (e) => {
-            state.orderComment = e.target.value;
-          };
-          el.onchange = (e) => {
-            state.orderComment = e.target.value;
-          };
-        }
+      updateRowMeta(item.id);
+      updateRowSum(item.id);
+    }
 
-        if (action === 'productChange') {
-          el.onchange = (e) => {
-            const id = el.getAttribute('data-id');
-            const productId = e.target.value;
-            const p = productById(productId);
-            updateItem(id, {
-              productId,
-              quantity: p && p.unit === 'кг' ? 1.0 : 1
-            });
-          };
-        }
+    function updateRowMeta(rowId) {
+      const item = state.orderItems.find(x => x.id === rowId);
+      if (!item) return;
 
-        if (action === 'qtyChange') {
-          el.oninput = (e) => {
-            const id = el.getAttribute('data-id');
-            const item = state.orderItems.find(x => x.id === id);
-            const p = item ? productById(item.productId) : null;
-            const raw = parseFloat(e.target.value) || 0;
-            const val = (p && p.unit === 'шт') ? Math.floor(raw) : raw;
-            updateItem(id, { quantity: val });
-          };
-        }
+      const row = document.getElementById(`row-${rowId}`);
+      if (!row) return;
+
+      const p = productById(item.productId);
+      const priceBox = row.querySelector('[data-row="price"]');
+      const qtyInput = row.querySelector('[data-row="qty"]');
+
+      if (p) {
+        priceBox.textContent = `${p.price}₽ / ${p.unit}`;
+        qtyInput.disabled = false;
+      } else {
+        priceBox.textContent = '—';
+        qtyInput.disabled = true;
+      }
+    }
+
+    function updateRowSum(rowId) {
+      const item = state.orderItems.find(x => x.id === rowId);
+      if (!item) return;
+
+      const row = document.getElementById(`row-${rowId}`);
+      if (!row) return;
+
+      const p = productById(item.productId);
+      const sumBox = row.querySelector('[data-row="sum"]');
+
+      const sum = p ? (Number(item.quantity || 0) * p.price) : 0;
+      sumBox.textContent = `${formatRuMoney(sum)} ₽`;
+    }
+
+    // =========================
+    // UI: статус/итоги/счётчик/кнопка очистить
+    // =========================
+    function renderStatusOnly() {
+      const box = document.getElementById('statusBox');
+      if (!box) return;
+
+      if (!state.status) {
+        box.innerHTML = '';
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="flex items-center gap-3 p-4 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300 ${
+          state.status.type === 'success'
+            ? 'bg-green-50 border-green-100 text-green-700'
+            : 'bg-red-50 border-red-100 text-red-700'
+        }">
+          ${state.status.type === 'success' ? iconSvg('check', 18) : iconSvg('alert', 18)}
+          <span class="text-sm font-medium">${escapeHtml(state.status.msg)}</span>
+        </div>
+      `;
+    }
+
+    function updateFooterTotals() {
+      const el = document.getElementById('totalSum');
+      if (!el) return;
+      el.textContent = formatRuMoney(totalSum());
+    }
+
+    function updateSelectedCount() {
+      const el = document.getElementById('selectedCount');
+      if (!el) return;
+      const selectedCount = state.orderItems.filter(i => i.productId).length;
+      el.textContent = `${selectedCount} ПОЗ.`;
+    }
+
+    function updateHeaderResetVisibility() {
+      const btn = document.getElementById('resetBtn');
+      if (!btn) return;
+      const show = (state.orderItems.length > 0 || String(state.clientName || '').trim() || String(state.orderComment || '').trim());
+      btn.classList.toggle('hidden', !show);
+    }
+
+    // =========================
+    // СОБЫТИЯ (каркас)
+    // =========================
+    function bindStaticEvents() {
+      const managerSelect = document.getElementById('managerSelect');
+      managerSelect.value = state.selectedManager;
+      managerSelect.addEventListener('change', (e) => {
+        state.selectedManager = e.target.value;
+      });
+
+      const clientField = document.getElementById('clientField');
+      clientField.addEventListener('input', (e) => {
+        state.clientName = e.target.value;
+        updateHeaderResetVisibility();
+      });
+
+      const dateField = document.getElementById('dateField');
+      dateField.value = state.orderDate;
+      dateField.addEventListener('change', (e) => {
+        state.orderDate = e.target.value;
+      });
+
+      const commentField = document.getElementById('commentField');
+      commentField.addEventListener('input', (e) => {
+        state.orderComment = e.target.value;
+        updateHeaderResetVisibility();
+      });
+
+      document.getElementById('addRowBtn').addEventListener('click', addRow);
+      document.getElementById('copyBtn').addEventListener('click', handleCopy);
+      document.getElementById('resetBtn').addEventListener('click', handleReset);
+
+      const sendBtn = document.getElementById('sendBtn');
+      const menu = document.getElementById('sendMenu');
+
+      sendBtn.addEventListener('click', () => {
+        menu.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        const isInside = sendBtn.contains(e.target) || menu.contains(e.target);
+        if (!isInside) menu.classList.add('hidden');
+      });
+
+      menu.querySelectorAll('[data-send]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const kind = btn.getAttribute('data-send');
+          menu.classList.add('hidden');
+          openMessenger(kind);
+        });
       });
     }
 
+    // =========================
     // Старт
+    // =========================
     render();
   </script>
 </body>
