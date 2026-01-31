@@ -1,35 +1,531 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ФерМама - Заявки</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-        }
-    </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ФерМама — Заявки</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+  </style>
 </head>
-<body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+
+<body class="bg-slate-50">
+  <div class="min-h-screen flex items-start justify-center p-4">
+    <div class="w-full max-w-3xl">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 sm:p-6">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" class="text-white">
+              <path d="M7 7h10v10H7V7Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              <path d="M7 12h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 7v10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900">ФерМама — Заявка</h1>
+            <p class="text-slate-500 text-sm">Приём заявок торговыми представителями</p>
+          </div>
+        </div>
+
+        <!-- Верхняя форма -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-600">МЕНЕДЖЕР</label>
+            <select id="manager" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-600">КЛИЕНТ</label>
+            <select id="client" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-semibold text-slate-600">ДАТА ПРИЁМА</label>
+            <input id="date" type="date" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-200"/>
+          </div>
+        </div>
+
+        <!-- Состав заявки -->
+        <div class="mt-6 flex items-center justify-between">
+          <h2 class="text-slate-900 font-bold">Состав заявки</h2>
+          <span id="itemsCount" class="text-xs font-semibold px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">0 поз.</span>
+        </div>
+
+        <div id="items" class="mt-3 space-y-3"></div>
+
+        <button id="addItemBtn" class="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50 active:bg-slate-100 transition">
+          + Добавить товар
+        </button>
+
+        <!-- Итог -->
+        <div class="mt-6 flex items-center justify-between bg-slate-50 border border-slate-100 rounded-2xl p-4">
+          <div class="text-slate-600 text-sm font-semibold">ИТОГО К ОПЛАТЕ</div>
+          <div id="total" class="text-slate-900 text-2xl font-bold">0 ₽</div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button id="copyBtn" class="rounded-xl border border-slate-200 bg-white px-4 py-3 font-semibold text-slate-800 hover:bg-slate-50 active:bg-slate-100 transition">
+            Скопировать текст
+          </button>
+
+          <button id="telegramBtn" class="sm:col-span-2 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 active:bg-emerald-800 transition flex items-center justify-center gap-2">
+            В Telegram
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M22 2L11 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <p class="mt-3 text-xs text-slate-500">
+          Отправка идёт через Telegram Share (без бота). Если Telegram не открылся — нажми “Скопировать текст” и вставь вручную.
+        </p>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // ===== ДАННЫЕ =====
+
+  const managers = [
+    {
+      id: "natalya",
+      name: "Наталья Йошкар-Ола",
+      clients: [
+        "ИП Калинина Елена Сергеевна",
+        "ИП Каюмов Рустам Мансурович",
+        "ИП Бурлуцкая О.С.",
+        "ООО \"Лина\"",
+        "ООО \"БизнесПроект\"",
+        "ИП БУРЛУЦКИЙ ЕВГЕНИЙ ВИКТОРОВИЧ"
+      ]
+    },
+    {
+      id: "maria",
+      name: "Мария Чебоксары",
+      clients: [
+        "Агрофирма",
+        "Атлашево Иванова Оксана Викторовна",
+        "Новочебоксарк 5",
+        "Вурманкасы Иванова Л.Ю.",
+        "Нов. город",
+        "Новочебоксраск"
+      ]
+    }
+  ];
+
+  // product: { id, name, unit: "шт"|"кг", price }
+  const products = [
+    // ШТУЧНЫЕ (шт)
+    { id:"p1",  name:"Вареники с картошкой 450 гр ФерМама", unit:"шт", price:145 },
+    { id:"p2",  name:"Вареники с картошкой 900 гр ФерМама", unit:"шт", price:290 },
+    { id:"p3",  name:"Голубцы ленивые 500г Фермама", unit:"шт", price:220 },
+    { id:"p5",  name:"Зразы Любительские 500 гр ФерМама", unit:"шт", price:225 },
+    { id:"p8",  name:"Котлеты Домашние 500 гр ФерМама", unit:"шт", price:265 },
+    { id:"p9",  name:"Котлеты По-киевски 500 гр ФерМама", unit:"шт", price:240 },
+    { id:"p10", name:"Котлеты Пожарские 500 гр ФерМама", unit:"шт", price:230 },
+    { id:"p11", name:"Котлеты Фирменные 500 гр ФерМама", unit:"шт", price:268 },
+    { id:"p12", name:"Котлеты из индейки 500 г ФерМама", unit:"шт", price:300 },
+    { id:"p13", name:"Котлеты куриные с сырно-сливочной начинкой 500 гр ФерМама", unit:"шт", price:258 },
+    { id:"p14", name:"Манты по-сибирски 450 гр ФерМама", unit:"шт", price:185 },
+    { id:"p15", name:"Манты по-сибирски 900 гр ФерМама", unit:"шт", price:370 },
+    { id:"p16", name:"Наггетсы Фирменные 500 гр ФерМама", unit:"шт", price:255 },
+    { id:"p17", name:"Пельмени Домашние 450 гр ФерМама", unit:"шт", price:179 },
+    { id:"p18", name:"Пельмени Домашние 900 гр ФерМама", unit:"шт", price:358 },
+    { id:"p19", name:"Пельмени Куриные 450 гр ФерМама", unit:"шт", price:159 },
+    { id:"p20", name:"Пельмени Куриные 900 гр ФерМама", unit:"шт", price:318 },
+    { id:"p21", name:"Пельмени Свинина-Курица 450 гр ФерМама", unit:"шт", price:160 },
+    { id:"p22", name:"Пельмени Свинина-Курица 900 гр ФерМама", unit:"шт", price:320 },
+    { id:"p23", name:"Пельмени из свинины 450г ФерМама", unit:"шт", price:161 },
+    { id:"p24", name:"Пельмени из свинины 900г ФерМама", unit:"шт", price:322 },
+    { id:"p25", name:"Пельмени из филе грудки индейки со слив. маслом 450 гр ФерМама", unit:"шт", price:185 },
+    { id:"p26", name:"Пельмени из филе грудки индейки со слив. маслом 900 гр ФерМама", unit:"шт", price:370 },
+    { id:"p27", name:"Подкоголи Домашние 450 гр ФерМама", unit:"шт", price:175 },
+    { id:"p28", name:"Подкоголи Домашние 900 гр ФерМама", unit:"шт", price:350 },
+    { id:"p29", name:"Равиоли 450г ФерМама", unit:"шт", price:263 },
+    { id:"p30", name:"Равиоли 900г ФерМама", unit:"шт", price:525 },
+    { id:"p31", name:"Фрикадельки Любимые 500 гр ФерМама", unit:"шт", price:199 },
+    { id:"p32", name:"Чебуреки по-домашнему 500 гр ФерМама", unit:"шт", price:229 },
+    { id:"p33", name:"Чебуреки с курицей 500 гр ФерМама", unit:"шт", price:190 },
+    { id:"p34", name:"Чебуреки с сыром 500 гр ФерМама", unit:"шт", price:279 },
+    { id:"p35", name:"Сырники 500 гр ФерМама", unit:"шт", price:270 },
+
+    // ВЕСОВЫЕ ИЗНАЧАЛЬНО (кг)
+    { id:"p4",  name:"Голубцы с мясом и рисом вес.", unit:"кг", price:339 },
+    { id:"p6",  name:"Колбаски Гриль с сыром вес.", unit:"кг", price:450 },
+    { id:"p7",  name:"Колбаски куриные из филе грудки вес.", unit:"кг", price:416 },
+    { id:"p36", name:"Фарш Свинина-говядина вес.", unit:"кг", price:499 },
+    { id:"p37", name:"Фарш Свиной вес.", unit:"кг", price:395 },
+
+    // ДОБАВЛЕННЫЕ ВЕСОВЫЕ (кг) — расчёт по твоему правилу, округление до целого
+    { id:"w1",  name:"Вареники с картошкой вес.", unit:"кг", price:322 },
+    { id:"w2",  name:"Голубцы ленивые вес.", unit:"кг", price:440 },
+    { id:"w3",  name:"Зразы Любительские вес.", unit:"кг", price:450 },
+    { id:"w4",  name:"Котлеты Домашние вес.", unit:"кг", price:530 },
+    { id:"w5",  name:"Котлеты По-киевски вес.", unit:"кг", price:480 },
+    { id:"w6",  name:"Котлеты Пожарские вес.", unit:"кг", price:460 },
+    { id:"w7",  name:"Котлеты Фирменные вес.", unit:"кг", price:536 },
+    { id:"w8",  name:"Котлеты из индейки вес.", unit:"кг", price:600 },
+    { id:"w9",  name:"Котлеты куриные с сырно-сливочной начинкой вес.", unit:"кг", price:516 },
+    { id:"w10", name:"Манты по-сибирски вес.", unit:"кг", price:411 },
+    { id:"w11", name:"Наггетсы Фирменные вес.", unit:"кг", price:510 },
+    { id:"w12", name:"Пельмени Домашние вес.", unit:"кг", price:398 },
+    { id:"w13", name:"Пельмени Куриные вес.", unit:"кг", price:353 },
+    { id:"w14", name:"Пельмени Свинина-Курица вес.", unit:"кг", price:356 },
+    { id:"w15", name:"Пельмени из свинины вес.", unit:"кг", price:358 },
+    { id:"w16", name:"Пельмени из филе грудки индейки со слив. маслом вес.", unit:"кг", price:411 },
+    { id:"w17", name:"Подкоголи Домашние вес.", unit:"кг", price:389 },
+    { id:"w18", name:"Равиоли вес.", unit:"кг", price:583 },
+    { id:"w19", name:"Фрикадельки Любимые вес.", unit:"кг", price:398 },
+    { id:"w20", name:"Чебуреки по-домашнему вес.", unit:"кг", price:458 },
+    { id:"w21", name:"Чебуреки с курицей вес.", unit:"кг", price:380 },
+    { id:"w22", name:"Чебуреки с сыром вес.", unit:"кг", price:558 },
+    { id:"w23", name:"Сырники вес.", unit:"кг", price:540 }
+  ];
+
+  // ===== УТИЛИТЫ =====
+
+  const byId = (id) => document.getElementById(id);
+
+  function rub(n){
+    const x = Math.round((Number(n) || 0) * 100) / 100;
+    const s = x.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+    // если целое — без .00
+    const clean = s.replace(/,00$/, "");
+    return clean + " ₽";
+  }
+
+  function todayYMD(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function ymdToDMY(ymd){
+    if(!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
+    const [y,m,d] = ymd.split("-");
+    return `${d}.${m}.${y}`;
+  }
+
+  function encodeTelegramText(text){
+    return encodeURIComponent(text);
+  }
+
+  // ===== СОСТОЯНИЕ =====
+
+  let items = []; // { id, productId, qty }
+
+  // ===== РЕНДЕР =====
+
+  function renderManagers(){
+    const sel = byId("manager");
+    sel.innerHTML = "";
+    managers.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m.id;
+      opt.textContent = m.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderClients(){
+    const managerId = byId("manager").value;
+    const m = managers.find(x => x.id === managerId) || managers[0];
+    const sel = byId("client");
+    sel.innerHTML = "";
+    m.clients.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  function productOptionsHTML(selectedId){
+    const sorted = [...products].sort((a,b) => a.name.localeCompare(b.name, "ru"));
+    return sorted.map(p => {
+      const sel = p.id === selectedId ? "selected" : "";
+      const suffix = ` — ${p.unit} / ${p.price}₽`;
+      return `<option value="${p.id}" ${sel}>${escapeHtml(p.name)}${suffix}</option>`;
+    }).join("");
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function getProduct(productId){
+    return products.find(p => p.id === productId) || products[0];
+  }
+
+  function calcRowSum(productId, qty){
+    const p = getProduct(productId);
+    const q = Number(qty) || 0;
+    return q * p.price;
+  }
+
+  function totalSum(){
+    return items.reduce((acc, it) => acc + calcRowSum(it.productId, it.qty), 0);
+  }
+
+  function renderItems(){
+    const wrap = byId("items");
+    wrap.innerHTML = "";
+
+    byId("itemsCount").textContent = `${items.length} поз.`;
+
+    items.forEach((it, idx) => {
+      const p = getProduct(it.productId);
+      const rowSum = calcRowSum(it.productId, it.qty);
+
+      const step = p.unit === "кг" ? "0.1" : "1";
+      const min = "0";
+
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-2xl border border-slate-100 shadow-sm p-4";
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="w-full">
+            <div class="text-xs font-semibold text-slate-500">ТОВАР</div>
+            <select data-idx="${idx}" data-role="product"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+              ${productOptionsHTML(it.productId)}
+            </select>
+          </div>
+
+          <button data-idx="${idx}" data-role="remove"
+            class="shrink-0 mt-5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 font-semibold hover:bg-rose-100 active:bg-rose-200 transition"
+            title="Удалить">
+            ✕
+          </button>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <div class="text-xs font-semibold text-slate-500">ЕД / ЦЕНА</div>
+            <div class="mt-1 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-slate-800 font-semibold">
+              ${p.unit} / ${p.price}₽
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-semibold text-slate-500">КОЛИЧЕСТВО</div>
+            <input data-idx="${idx}" data-role="qty" type="number" inputmode="decimal"
+              min="${min}" step="${step}" value="${String(it.qty).replace('"','')}"
+              class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+            />
+            <div class="text-[11px] text-slate-500 mt-1">
+              ${p.unit === "кг" ? "Можно дробное (кг)" : "Только целое (шт)"}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs font-semibold text-slate-500">СУММА</div>
+            <div class="mt-1 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-emerald-800 font-bold">
+              ${rub(rowSum)}
+            </div>
+          </div>
+        </div>
+      `;
+
+      wrap.appendChild(card);
+    });
+
+    byId("total").textContent = rub(totalSum());
+  }
+
+  // ===== ТЕКСТ ЗАЯВКИ =====
+
+  function buildOrderText(){
+    const mId = byId("manager").value;
+    const m = managers.find(x => x.id === mId) || managers[0];
+    const c = byId("client").value || "";
+    const d = byId("date").value || "";
+    const dText = d ? ymdToDMY(d) : "";
+
+    const lines = [];
+    lines.push("🧾 Заявка ФерМама");
+    lines.push("");
+    lines.push(`👤 Менеджер: ${m.name}`);
+    lines.push(`🏪 Клиент: ${c}`);
+    if (dText) lines.push(`📅 Дата приёма: ${dText}`);
+    lines.push("");
+    lines.push("📦 Позиции:");
+
+    if(items.length === 0){
+      lines.push("— (нет позиций)");
+    } else {
+      items.forEach((it, i) => {
+        const p = getProduct(it.productId);
+        const q = Number(it.qty) || 0;
+        const row = calcRowSum(it.productId, it.qty);
+        const qText = p.unit === "кг"
+          ? q.toLocaleString("ru-RU", { maximumFractionDigits: 2 })
+          : String(Math.trunc(q));
+        lines.push(`${i+1}) ${p.name}`);
+        lines.push(`   • ${qText} ${p.unit} × ${p.price} ₽ = ${rub(row)}`);
+      });
+    }
+
+    lines.push("");
+    lines.push(`💰 ИТОГО: ${rub(totalSum())}`);
+
+    return lines.join("\n");
+  }
+
+  // ===== СОБЫТИЯ =====
+
+  function addItem(){
+    const defaultProduct = products[0];
+    items.push({
+      id: cryptoRandomId(),
+      productId: defaultProduct.id,
+      qty: defaultProduct.unit === "кг" ? 0.0 : 0
+    });
+    renderItems();
+  }
+
+  function removeItem(idx){
+    items.splice(idx, 1);
+    renderItems();
+  }
+
+  function setProduct(idx, productId){
+    items[idx].productId = productId;
+    const p = getProduct(productId);
+    // если перешли на шт — округлим количество вниз до целого
+    if(p.unit === "шт"){
+      items[idx].qty = Math.trunc(Number(items[idx].qty) || 0);
+    }
+    renderItems();
+  }
+
+  function setQty(idx, qty){
+    const p = getProduct(items[idx].productId);
+    let q = Number(qty);
+    if(!isFinite(q) || q < 0) q = 0;
+
+    if(p.unit === "шт"){
+      q = Math.trunc(q);
+    } else {
+      // кг — оставляем дробное, но ограничим до 2 знаков
+      q = Math.round(q * 100) / 100;
+    }
+    items[idx].qty = q;
+    renderItems();
+  }
+
+  function cryptoRandomId(){
+    try {
+      return crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+    } catch(e){
+      return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+    }
+  }
+
+  function onItemsClick(e){
+    const t = e.target;
+    if(!t || !t.dataset) return;
+
+    const role = t.dataset.role;
+    const idx = Number(t.dataset.idx);
+
+    if(role === "remove"){
+      removeItem(idx);
+    }
+  }
+
+  function onItemsChange(e){
+    const t = e.target;
+    if(!t || !t.dataset) return;
+
+    const role = t.dataset.role;
+    const idx = Number(t.dataset.idx);
+
+    if(role === "product"){
+      setProduct(idx, t.value);
+    } else if(role === "qty"){
+      setQty(idx, t.value);
+    }
+  }
+
+  async function copyText(){
+    const text = buildOrderText();
+    try{
+      await navigator.clipboard.writeText(text);
+      alert("✅ Текст заявки скопирован");
+    } catch(e){
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      alert("✅ Текст заявки скопирован");
+    }
+  }
+
+  function openTelegram(){
+    const text = buildOrderText();
+    const shareUrl = "https://t.me/share/url?url=" + encodeURIComponent("") + "&text=" + encodeTelegramText(text);
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  }
+
+  // ===== INIT =====
+
+  function init(){
+    renderManagers();
+    renderClients();
+
+    const dateEl = byId("date");
+    dateEl.value = todayYMD();
+
+    byId("manager").addEventListener("change", () => {
+      renderClients();
+    });
+
+    byId("addItemBtn").addEventListener("click", () => addItem());
+
+    byId("items").addEventListener("click", onItemsClick);
+    byId("items").addEventListener("change", onItemsChange);
+    byId("items").addEventListener("input", (e) => {
+      const t = e.target;
+      if(t && t.dataset && t.dataset.role === "qty"){
+        const idx = Number(t.dataset.idx);
+        setQty(idx, t.value);
+      }
+    });
+
+    byId("copyBtn").addEventListener("click", copyText);
+    byId("telegramBtn").addEventListener("click", openTelegram);
+
+    // стартовая строка
+    addItem();
+  }
+
+  init();
+})();
+</script>
 </body>
 </html>
