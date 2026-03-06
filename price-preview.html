@@ -365,6 +365,11 @@
 
     /* ---- MOBILE ---- */
     @media (max-width: 640px) {
+      /* Top-bar: статичный, не перекрывает контент */
+      .top-bar { position: static; background: white; padding: 10px 12px; justify-content: flex-end; border-bottom: 1px solid #e8e0d4; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+      .top-btn { padding: 9px 14px; font-size: 13px; }
+      .share-popup { top: auto; bottom: 60px; right: 12px; left: 12px; }
+
       .page-wrapper { margin: 0; border-radius: 0; box-shadow: none; }
 
       /* Header: лого маленький слева, текст по центру */
@@ -382,29 +387,31 @@
       /* Conditions: 2x2 */
       .conditions { padding: 14px 16px; grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .cond-item { align-items: flex-start; }
-      .cond-icon { font-size: 18px; }
-      .cond-title { font-size: 10px; }
-      .cond-value { font-size: 12px; }
+      .cond-icon { font-size: 20px; }
+      .cond-title { font-size: 11px; }
+      .cond-value { font-size: 14px; }
 
       /* Hits */
       .hits-section { padding: 14px 16px 16px; }
+      .hits-title { font-size: 14px; }
       .hits-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
       .hit-card { padding: 10px 12px; }
-      .hit-card-name { font-size: 11px; }
-      .hit-card-price { font-size: 12px; }
+      .hit-card-name { font-size: 13px; }
+      .hit-card-price { font-size: 15px; }
+      .hit-card-unit { font-size: 11px; }
 
-      /* Products table — убираем колонку "Кол-во" на мобиле, показываем поле ввода в имени */
+      /* Products table */
       .products-section { padding: 16px 10px 24px; }
-      .category-name { font-size: 13px; padding: 6px 10px; }
-      table { font-size: 12px; }
-      thead th { padding: 6px 5px; font-size: 9px; }
+      .category-name { font-size: 14px; padding: 7px 10px; }
+      table { font-size: 13px; }
+      thead th { padding: 6px 5px; font-size: 10px; }
       thead th:nth-child(2) { width: 36px; }
-      thead th:nth-child(3) { width: 70px; }
-      thead th:nth-child(4) { width: 52px; }
-      td { padding: 7px 5px; font-size: 12px; }
-      td:nth-child(3) { padding-right: 6px; font-size: 12px; }
-      td:nth-child(4) { width: 52px; }
-      .qty-field { width: 42px; height: 24px; font-size: 11px; }
+      thead th:nth-child(3) { width: 72px; }
+      thead th:nth-child(4) { width: 54px; }
+      td { padding: 8px 5px; font-size: 13px; }
+      td:nth-child(3) { padding-right: 6px; font-size: 13px; font-weight: 700; }
+      td:nth-child(4) { width: 54px; }
+      .qty-field { width: 44px; height: 26px; font-size: 12px; }
 
       /* Footer */
       .footer { padding: 16px; }

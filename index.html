@@ -288,12 +288,10 @@
       if (kind === 'share') {
         if (navigator.share) {
           navigator.share({ text }).catch(() => {
-            const encodedText = encodeURIComponent(text);
-            window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
+            window.location.href = `tg://msg?text=${encodeURIComponent(text)}`;
           });
         } else {
-          const encodedText = encodeURIComponent(text);
-          window.open(`https://t.me/share/url?url=&text=${encodedText}`, '_blank');
+          window.location.href = `tg://msg?text=${encodeURIComponent(text)}`;
         }
         return;
       }
@@ -301,7 +299,7 @@
       const encoded = encodeURIComponent(text);
 
       if (kind === 'telegram') {
-        window.open(`https://t.me/share/url?url=&text=${encoded}`, '_blank');
+        window.location.href = `tg://msg?text=${encoded}`;
         return;
       }
 
@@ -352,27 +350,25 @@
     }
 
     function handleReset() {
-      if (window.confirm('Очистить форму заявки?')) {
-        state.orderItems = [];
-        state.orderComment = '';
-        state.clientName = '';
-        state.status = null;
+      state.orderItems = [];
+      state.orderComment = '';
+      state.clientName = '';
+      state.status = null;
 
-        const list = document.getElementById('rows');
-        if (list) list.innerHTML = '';
+      const list = document.getElementById('rows');
+      if (list) list.innerHTML = '';
 
-        const c = document.getElementById('clientField');
-        if (c) c.value = '';
-        const com = document.getElementById('commentField');
-        if (com) com.value = '';
+      const c = document.getElementById('clientField');
+      if (c) c.value = '';
+      const com = document.getElementById('commentField');
+      if (com) com.value = '';
 
-        if (state.viewMode === 'matrix') renderMatrix();
+      if (state.viewMode === 'matrix') renderMatrix();
 
-        updateFooterTotals();
-        updateHeaderResetVisibility();
-        updateSelectedCount();
-        renderStatusOnly();
-      }
+      updateFooterTotals();
+      updateHeaderResetVisibility();
+      updateSelectedCount();
+      setStatus('success', 'Заявка очищена');
     }
 
     // =========================
