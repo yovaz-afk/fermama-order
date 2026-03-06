@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ФерМама — Прайс-лист КП</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --green: #6BBF23;
+      --green-dark: #4e9017;
+      --brown: #5C3317;
+      --orange: #F5A623;
+      --cream: #FFF9F0;
+      --text: #1a1a1a;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      background: #e8e8e8;
+      color: var(--text);
+    }
+
+    /* ---- TOP BUTTONS (не печатаются) ---- */
+    .top-bar {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+    }
+    .top-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: Inter, sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.18);
+    }
+    .btn-pdf  { background: var(--green); color: white; }
+    .btn-pdf:hover  { background: var(--green-dark); }
+    .btn-share { background: white; color: var(--green-dark); }
+    .btn-share:hover { background: #f5f5f5; }
+
+    /* Share popup */
+    .share-popup {
+      position: fixed;
+      top: 62px;
+      right: 16px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      padding: 12px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 200;
+      min-width: 200px;
+    }
+    .share-popup.open { display: flex; }
+    .share-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      background: none;
+      font-family: Inter, sans-serif;
+      width: 100%;
+      text-align: left;
+    }
+    .share-option:hover { background: #f5f5f5; }
+    .share-option .so-icon { font-size: 18px; width: 24px; text-align: center; }
+
+    .page-wrapper {
+      max-width: 900px;
+      margin: 32px auto;
+      background: white;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    /* ---- HEADER ---- */
+    .header {
+      background: var(--green);
+      padding: 40px 48px 32px;
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      right: -20px;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 50%;
+    }
+    .header-logo {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 4px solid rgba(255,255,255,0.4);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .header-text { flex: 1; }
+    .header-company {
+      color: rgba(255,255,255,0.85);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .header-title {
+      color: white;
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+    .header-subtitle {
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .header-date {
+      color: rgba(255,255,255,0.75);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* ---- AWARDS ---- */
+    .awards-bar {
+      background: var(--brown);
+      padding: 14px 48px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .awards-label {
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+    .award-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 4px 12px;
+      color: var(--orange);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .award-badge .medal { font-size: 14px; }
+
+    /* ---- CONDITIONS ---- */
+    .conditions {
+      background: var(--cream);
+      border-bottom: 1px solid #e8e0d4;
+      padding: 20px 48px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .cond-item { display: flex; flex-direction: column; gap: 4px; }
+    .cond-icon { font-size: 20px; }
+    .cond-title {
+      font-size: 11px;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .cond-value { font-size: 13px; font-weight: 700; color: var(--green-dark); }
+
+    /* ---- PRODUCTS TABLE ---- */
+    .products-section { padding: 32px 48px 40px; }
+    .section-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .category-block { margin-bottom: 28px; }
+    .category-name {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--brown);
+      background: #f9f4ee;
+      border-left: 4px solid var(--green);
+      padding: 7px 14px;
+      border-radius: 0 6px 6px 0;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #f5f5f5; }
+    thead th {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #999;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    thead th:nth-child(2) { text-align: center; width: 64px; }
+    thead th:nth-child(3) { text-align: right;  width: 100px; }
+    thead th:nth-child(4) { text-align: center; width: 90px; }
+
+    tbody tr { border-bottom: 1px solid #f0f0f0; }
+    tbody tr:last-child { border-bottom: none; }
+
+    td { padding: 9px 12px; font-size: 13px; }
+    td:nth-child(1) { color: #222; font-weight: 500; }
+    td:nth-child(2) { text-align: center; width: 64px; color: #777; font-size: 12px; white-space: nowrap; }
+    td:nth-child(3) { text-align: right;  width: 100px; font-weight: 700; color: var(--green-dark); white-space: nowrap; padding-right: 20px; }
+    td:nth-child(4) { text-align: center; width: 90px; }
+
+    .qty-field {
+      width: 70px;
+      height: 28px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      text-align: center;
+      font-size: 13px;
+      color: #333;
+      background: white;
+    }
+
+    .unit-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+    .unit-badge.sht { background: #e8f5ff; color: #2980b9; }
+    .unit-badge.kg  { background: #fff3e0; color: #e67e22; }
+
+    /* ---- HITS ---- */
+    .hits-section {
+      background: #fffbf0;
+      border-top: 1px solid #f0e8d4;
+      border-bottom: 1px solid #f0e8d4;
+      padding: 20px 48px 24px;
+    }
+    .hits-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--brown);
+      margin-bottom: 14px;
+      letter-spacing: 0.3px;
+    }
+    .hits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .hit-card {
+      background: white;
+      border: 1.5px solid #f5e8cc;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .hit-card-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brown);
+      line-height: 1.35;
+    }
+    .hit-card-price {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--green-dark);
+    }
+    .hit-card-unit {
+      font-size: 10px;
+      color: #aaa;
+      font-weight: 600;
+    }
+
+    /* ---- FOOTER ---- */
+    .footer {
+      background: var(--green);
+      padding: 24px 48px;
+    }
+    .footer-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .footer-block {}
+    .footer-label {
+      color: rgba(255,255,255,0.7);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .footer-value {
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .footer-value a {
+      color: white;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .footer-manager-line {
+      margin-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+      padding-top: 14px;
+      color: rgba(255,255,255,0.9);
+      font-size: 13px;
+    }
+    .footer-manager-line span {
+      display: inline-block;
+      min-width: 180px;
+      border-bottom: 1px solid rgba(255,255,255,0.4);
+      margin-left: 8px;
+    }
+
+    /* ---- PRINT ---- */
+    @media print {
+      body { background: white; }
+      .page-wrapper { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
+      .top-bar, .share-popup { display: none !important; }
+      .category-block { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- КНОПКИ СВЕРХУ -->
+<div class="top-bar" id="topBar">
+  <button class="top-btn btn-share" onclick="toggleShare(event)">↗ Поделиться</button>
+  <button class="top-btn btn-pdf" onclick="downloadPDF()">⬇ Скачать PDF</button>
+</div>
+
+<div class="share-popup" id="sharePopup">
+  <a class="share-option" href="https://t.me/FerMama_delivery?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21+%D0%9E%D0%B7%D0%BD%D0%B0%D0%BA%D0%BE%D0%BC%D0%B8%D0%BB%D1%81%D1%8F+%D1%81+%D0%B2%D0%B0%D1%88%D0%B8%D0%BC+%D0%BF%D1%80%D0%B0%D0%B9%D1%81%D0%BE%D0%BC.+%D0%A5%D0%BE%D1%87%D1%83+%D0%BE%D1%84%D0%BE%D1%80%D0%BC%D0%B8%D1%82%D1%8C+%D0%B7%D0%B0%D1%8F%D0%B2%D0%BA%D1%83." target="_blank">
+    <span class="so-icon">✈</span> Написать в Telegram
+  </a>
+  <a class="share-option" id="emailShareBtn" href="#">
+    <span class="so-icon">✉</span> Отправить на почту
+  </a>
+  <button class="share-option" onclick="copyLink()">
+    <span class="so-icon">🔗</span> Скопировать ссылку
+  </button>
+</div>
+
+<div class="page-wrapper" id="pdfContent">
+
+  <!-- ШАПКА -->
+  <div class="header">
+    <img src="аватар с доской (1).jpg" class="header-logo" alt="ФерМама"/>
+    <div class="header-text">
+      <div class="header-company">ООО «ФерМама Про»</div>
+      <div class="header-title">Оптовый прайс-лист</div>
+      <div class="header-subtitle">Замороженные полуфабрикаты собственного производства</div>
+      <div class="header-date" id="priceDate"></div>
+    </div>
+  </div>
+
+  <!-- НАГРАДЫ -->
+  <div class="awards-bar">
+    <span class="awards-label">Награды</span>
+    <span class="award-badge"><span class="medal">🥇</span> Пельмени Домашние — Продукт года 2025</span>
+    <span class="award-badge"><span class="medal">🥇</span> Котлеты Пожарские — Продукт года 2025</span>
+    <span class="award-badge"><span class="medal">🥇</span> Наггетсы Фирменные — Продукт года 2025</span>
+  </div>
+
+  <!-- УСЛОВИЯ -->
+  <div class="conditions">
+    <div class="cond-item">
+      <div class="cond-icon">📦</div>
+      <div class="cond-title">Мин. заказ</div>
+      <div class="cond-value">от 5 000 ₽</div>
+    </div>
+    <div class="cond-item">
+      <div class="cond-icon">🚚</div>
+      <div class="cond-title">Доставка</div>
+      <div class="cond-value">1–2 раб. дня</div>
+    </div>
+    <div class="cond-item">
+      <div class="cond-icon">🎁</div>
+      <div class="cond-title">Первый заказ</div>
+      <div class="cond-value">Дегустац. набор бесплатно</div>
+    </div>
+    <div class="cond-item">
+      <div class="cond-icon">📋</div>
+      <div class="cond-title">Документы</div>
+      <div class="cond-value">Все сертификаты в комплекте</div>
+    </div>
+  </div>
+
+  <!-- ХИТЫ ПРОДАЖ -->
+  <div class="hits-section">
+    <div class="hits-title">🔥 Берут чаще всего — с этого можно начать</div>
+    <div class="hits-grid" id="hitsGrid"></div>
+  </div>
+
+  <!-- ТАБЛИЦА ТОВАРОВ -->
+  <div class="products-section">
+    <div class="section-title">Ассортимент</div>
+    <div id="productsContainer"></div>
+  </div>
+
+  <!-- ФУТЕР -->
+  <div class="footer">
+    <div class="footer-top">
+      <div class="footer-block">
+        <div class="footer-label">Производство</div>
+        <div class="footer-value">г. Йошкар-Ола, ул. Льва Толстого, д. 23</div>
+      </div>
+      <div class="footer-block">
+        <div class="footer-label">Телефон</div>
+        <div class="footer-value">8 (927) 883-01-69</div>
+      </div>
+      <div class="footer-block">
+        <div class="footer-label">Telegram</div>
+        <div class="footer-value">
+          <a href="https://t.me/FerMama_delivery?text=%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5%21+%D0%9E%D0%B7%D0%BD%D0%B0%D0%BA%D0%BE%D0%BC%D0%B8%D0%BB%D1%81%D1%8F+%D1%81+%D0%B2%D0%B0%D1%88%D0%B8%D0%BC+%D0%BF%D1%80%D0%B0%D0%B9%D1%81%D0%BE%D0%BC.+%D0%A5%D0%BE%D1%87%D1%83+%D0%BE%D1%84%D0%BE%D1%80%D0%BC%D0%B8%D1%82%D1%8C+%D0%B7%D0%B0%D1%8F%D0%B2%D0%BA%D1%83." target="_blank">@FerMama_delivery</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-manager-line">
+      Менеджер:&nbsp;<span>&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp; Тел.:&nbsp;<span>&nbsp;</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Хиты продаж
+  const HITS = [
+    { name: 'Пельмени Домашние 450 гр',       price: 179, unit: 'шт' },
+    { name: 'Котлеты Пожарские 500 гр',        price: 230, unit: 'шт' },
+    { name: 'Наггетсы Фирменные 500 гр',       price: 255, unit: 'шт' },
+    { name: 'Котлеты По-киевски 500 гр',       price: 240, unit: 'шт' },
+    { name: 'Пельмени Свинина-Курица 450 гр',  price: 160, unit: 'шт' },
+    { name: 'Колбаски куриные из филе грудки вес.', price: 416, unit: 'кг' },
+  ];
+  document.getElementById('hitsGrid').innerHTML = HITS.map(h => `
+    <div class="hit-card">
+      <div class="hit-card-name">${h.name}</div>
+      <div class="hit-card-price">${h.price.toLocaleString('ru')} ₽</div>
+      <div class="hit-card-unit">за ${h.unit}</div>
+    </div>
+  `).join('');
+
+  // Дата
+  const now = new Date();
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  document.getElementById('priceDate').textContent = `Действует с ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()} г.`;
+
+  // Email share
+  const emailSubject = encodeURIComponent('Оптовый прайс-лист ФерМама');
+  const emailBody = encodeURIComponent('Здравствуйте!\n\nПрисылаю прайс-лист на продукцию ФерМама.\nДля оформления заявки напишите нам:\nTelegram: @FerMama_delivery\nТел.: 8 (927) 883-01-69\n\n' + window.location.href);
+  document.getElementById('emailShareBtn').href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+
+  // PDF download
+  function downloadPDF() {
+    const bar = document.getElementById('topBar');
+    bar.style.display = 'none';
+    document.getElementById('sharePopup').style.display = 'none';
+    const el = document.getElementById('pdfContent');
+    const date = `${now.getDate()}_${now.getMonth()+1}_${now.getFullYear()}`;
+    html2pdf().set({
+      margin: 0,
+      filename: `ФерМама_Прайс_${date}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).from(el).save().then(() => {
+      bar.style.display = 'flex';
+    });
+  }
+
+  // Share popup toggle
+  function toggleShare(e) {
+    e.stopPropagation();
+    document.getElementById('sharePopup').classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('sharePopup').classList.remove('open');
+  });
+  document.getElementById('sharePopup').addEventListener('click', e => e.stopPropagation());
+
+  // Copy link
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      alert('Ссылка скопирована!');
+    }).catch(() => {
+      prompt('Скопируй ссылку:', window.location.href);
+    });
+    document.getElementById('sharePopup').classList.remove('open');
+  }
+
+  // Продукты
+  const PRODUCTS = [
+    { name: 'Вареники с картошкой 450 гр',    cat: 'Вареники',     unit: 'шт', price: 145 },
+    { name: 'Вареники с картошкой 900 гр',    cat: 'Вареники',     unit: 'шт', price: 290 },
+    { name: 'Вареники с картошкой вес.',      cat: 'Вареники',     unit: 'кг', price: 322 },
+
+    { name: 'Голубцы ленивые 500г',           cat: 'Голубцы',      unit: 'шт', price: 220 },
+    { name: 'Голубцы ленивые вес.',           cat: 'Голубцы',      unit: 'кг', price: 440 },
+    { name: 'Голубцы с мясом и рисом вес.',   cat: 'Голубцы',      unit: 'кг', price: 339 },
+
+    { name: 'Зразы Любительские 500 гр',      cat: 'Зразы',        unit: 'шт', price: 225 },
+    { name: 'Зразы Любительские вес.',        cat: 'Зразы',        unit: 'кг', price: 450 },
+
+    { name: 'Котлеты Домашние 500 гр',        cat: 'Котлеты',      unit: 'шт', price: 265 },
+    { name: 'Котлеты Домашние вес.',          cat: 'Котлеты',      unit: 'кг', price: 530 },
+    { name: 'Котлеты По-киевски 500 гр',      cat: 'Котлеты',      unit: 'шт', price: 240 },
+    { name: 'Котлеты По-киевски вес.',        cat: 'Котлеты',      unit: 'кг', price: 480 },
+    { name: 'Котлеты Пожарские 500 гр',       cat: 'Котлеты',      unit: 'шт', price: 230 },
+    { name: 'Котлеты Пожарские вес.',         cat: 'Котлеты',      unit: 'кг', price: 460 },
+    { name: 'Котлеты из индейки 500 г',       cat: 'Котлеты',      unit: 'шт', price: 300 },
+    { name: 'Котлеты из индейки вес.',        cat: 'Котлеты',      unit: 'кг', price: 600 },
+    { name: 'Котлеты куриные с сырно-сливочной начинкой 500 гр', cat: 'Котлеты', unit: 'шт', price: 258 },
+    { name: 'Котлеты куриные с сырно-сливочной начинкой вес.',   cat: 'Котлеты', unit: 'кг', price: 516 },
+
+    { name: 'Манты по-сибирски 450 гр',       cat: 'Манты',        unit: 'шт', price: 185 },
+    { name: 'Манты по-сибирски 900 гр',       cat: 'Манты',        unit: 'шт', price: 370 },
+    { name: 'Манты по-сибирски вес.',         cat: 'Манты',        unit: 'кг', price: 411 },
+
+    { name: 'Наггетсы Фирменные 500 гр',      cat: 'Наггетсы',     unit: 'шт', price: 255 },
+    { name: 'Наггетсы Фирменные вес.',        cat: 'Наггетсы',     unit: 'кг', price: 510 },
+
+    { name: 'Пельмени Домашние 450 гр',       cat: 'Пельмени',     unit: 'шт', price: 179 },
+    { name: 'Пельмени Домашние 900 гр',       cat: 'Пельмени',     unit: 'шт', price: 358 },
+    { name: 'Пельмени Домашние вес.',         cat: 'Пельмени',     unit: 'кг', price: 398 },
+    { name: 'Пельмени Куриные 450 гр',        cat: 'Пельмени',     unit: 'шт', price: 159 },
+    { name: 'Пельмени Куриные 900 гр',        cat: 'Пельмени',     unit: 'шт', price: 318 },
+    { name: 'Пельмени Куриные вес.',          cat: 'Пельмени',     unit: 'кг', price: 353 },
+    { name: 'Пельмени Свинина-Курица 450 гр', cat: 'Пельмени',     unit: 'шт', price: 160 },
+    { name: 'Пельмени Свинина-Курица 900 гр', cat: 'Пельмени',     unit: 'шт', price: 320 },
+    { name: 'Пельмени Свинина-Курица вес.',   cat: 'Пельмени',     unit: 'кг', price: 356 },
+    { name: 'Пельмени из свинины 450г',       cat: 'Пельмени',     unit: 'шт', price: 161 },
+    { name: 'Пельмени из свинины 900г',       cat: 'Пельмени',     unit: 'шт', price: 322 },
+    { name: 'Пельмени из свинины вес.',       cat: 'Пельмени',     unit: 'кг', price: 358 },
+    { name: 'Пельмени из филе грудки индейки со слив. маслом 450 гр', cat: 'Пельмени', unit: 'шт', price: 185 },
+    { name: 'Пельмени из филе грудки индейки со слив. маслом 900 гр', cat: 'Пельмени', unit: 'шт', price: 370 },
+    { name: 'Пельмени из филе грудки индейки со слив. маслом вес.',   cat: 'Пельмени', unit: 'кг', price: 411 },
+
+    { name: 'Подкоголи Домашние 450 гр',      cat: 'Подкоголи',    unit: 'шт', price: 175 },
+    { name: 'Подкоголи Домашние 900 гр',      cat: 'Подкоголи',    unit: 'шт', price: 350 },
+    { name: 'Подкоголи Домашние вес.',        cat: 'Подкоголи',    unit: 'кг', price: 389 },
+
+    { name: 'Равиоли 450г',                   cat: 'Равиоли',      unit: 'шт', price: 263 },
+    { name: 'Равиоли 900г',                   cat: 'Равиоли',      unit: 'шт', price: 525 },
+    { name: 'Равиоли вес.',                   cat: 'Равиоли',      unit: 'кг', price: 583 },
+
+    { name: 'Фрикадельки Любимые 500 гр',     cat: 'Фрикадельки',  unit: 'шт', price: 199 },
+    { name: 'Фрикадельки Любимые вес.',       cat: 'Фрикадельки',  unit: 'кг', price: 398 },
+
+    { name: 'Чебуреки по-домашнему 500 гр',   cat: 'Чебуреки',     unit: 'шт', price: 229 },
+    { name: 'Чебуреки по-домашнему вес.',     cat: 'Чебуреки',     unit: 'кг', price: 458 },
+    { name: 'Чебуреки с курицей 500 гр',      cat: 'Чебуреки',     unit: 'шт', price: 190 },
+    { name: 'Чебуреки с курицей вес.',        cat: 'Чебуреки',     unit: 'кг', price: 380 },
+
+    { name: 'Сырники 500 гр',                 cat: 'Сырники',      unit: 'шт', price: 270 },
+    { name: 'Сырники вес.',                   cat: 'Сырники',      unit: 'кг', price: 540 },
+
+    { name: 'Колбаски Гриль с сыром вес.',             cat: 'Колбаски', unit: 'кг', price: 450 },
+    { name: 'Колбаски куриные из филе грудки вес.',    cat: 'Колбаски', unit: 'кг', price: 416 },
+
+    { name: 'Фарш из филе куриной грудки вес.', cat: 'Фарш', unit: 'кг', price: 465 },
+    { name: 'Фарш Свинина-говядина вес.',        cat: 'Фарш', unit: 'кг', price: 499 },
+    { name: 'Фарш Свиной вес.',                  cat: 'Фарш', unit: 'кг', price: 395 },
+  ];
+
+  const AWARD_WINNERS = new Set([
+    'Пельмени Домашние 450 гр',
+    'Пельмени Домашние 900 гр',
+    'Пельмени Домашние вес.',
+    'Котлеты Пожарские 500 гр',
+    'Котлеты Пожарские вес.',
+    'Наггетсы Фирменные 500 гр',
+    'Наггетсы Фирменные вес.',
+  ]);
+
+  // Группировка (порядок категорий сохраняется как в массиве)
+  const catOrder = [];
+  const cats = {};
+  PRODUCTS.forEach(p => {
+    if (!cats[p.cat]) { cats[p.cat] = []; catOrder.push(p.cat); }
+    cats[p.cat].push(p);
+  });
+
+  const container = document.getElementById('productsContainer');
+  let rowNum = 1;
+
+  catOrder.forEach(cat => {
+    const items = cats[cat];
+    const block = document.createElement('div');
+    block.className = 'category-block';
+
+    let rows = items.map(p => {
+      const medal = AWARD_WINNERS.has(p.name) ? ' 🥇' : '';
+      return `
+      <tr>
+        <td>${rowNum++}. ${p.name}${medal}</td>
+        <td><span class="unit-badge ${p.unit === 'шт' ? 'sht' : 'kg'}">${p.unit}</span></td>
+        <td>${p.price.toLocaleString('ru')} ₽</td>
+        <td><input class="qty-field" type="text"/></td>
+      </tr>
+    `;
+    }).join('');
+
+    block.innerHTML = `
+      <div class="category-name">${cat}</div>
+      <table>
+        <thead><tr>
+          <th>Наименование</th><th>Ед.</th><th>Цена</th><th>Кол-во</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+    container.appendChild(block);
+  });
+</script>
+</body>
+</html>

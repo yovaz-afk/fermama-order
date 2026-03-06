@@ -39,7 +39,6 @@
       { id: 'p5', name: 'Котлеты Домашние 500 гр', unit: 'шт', price: 265 },
       { id: 'p6', name: 'Котлеты По-киевски 500 гр', unit: 'шт', price: 240 },
       { id: 'p7', name: 'Котлеты Пожарские 500 гр', unit: 'шт', price: 230 },
-      { id: 'p8', name: 'Котлеты Фирменные 500 гр', unit: 'шт', price: 268 },
       { id: 'p9', name: 'Котлеты из индейки 500 г', unit: 'шт', price: 300 },
       { id: 'p10', name: 'Котлеты куриные с сырно-сливочной начинкой 500 гр', unit: 'шт', price: 258 },
       { id: 'p11', name: 'Манты по-сибирски 450 гр', unit: 'шт', price: 185 },
@@ -62,7 +61,6 @@
       { id: 'p28', name: 'Фрикадельки Любимые 500 гр', unit: 'шт', price: 199 },
       { id: 'p29', name: 'Чебуреки по-домашнему 500 гр', unit: 'шт', price: 229 },
       { id: 'p30', name: 'Чебуреки с курицей 500 гр', unit: 'шт', price: 190 },
-      { id: 'p31', name: 'Чебуреки с сыром 500 гр', unit: 'шт', price: 279 },
       { id: 'p32', name: 'Сырники 500 гр', unit: 'шт', price: 270 },
 
       // 6.2 Весовые (расчёт за кг)
@@ -72,7 +70,6 @@
       { id: 'w4', name: 'Котлеты Домашние вес.', unit: 'кг', price: 530 },
       { id: 'w5', name: 'Котлеты По-киевски вес.', unit: 'кг', price: 480 },
       { id: 'w6', name: 'Котлеты Пожарские вес.', unit: 'кг', price: 460 },
-      { id: 'w7', name: 'Котлеты Фирменные вес.', unit: 'кг', price: 536 },
       { id: 'w8', name: 'Котлеты из индейки вес.', unit: 'кг', price: 600 },
       { id: 'w9', name: 'Котлеты куриные с сырно-сливочной начинкой вес.', unit: 'кг', price: 516 },
       { id: 'w10', name: 'Манты по-сибирски вес.', unit: 'кг', price: 411 },
@@ -87,7 +84,6 @@
       { id: 'w19', name: 'Фрикадельки Любимые вес.', unit: 'кг', price: 398 },
       { id: 'w20', name: 'Чебуреки по-домашнему вес.', unit: 'кг', price: 458 },
       { id: 'w21', name: 'Чебуреки с курицей вес.', unit: 'кг', price: 380 },
-      { id: 'w22', name: 'Чебуреки с сыром вес.', unit: 'кг', price: 558 },
       { id: 'w23', name: 'Сырники вес.', unit: 'кг', price: 540 },
 
       // 6.3 Весовые (изначально в прайсе)
@@ -98,6 +94,9 @@
       { id: 'wo5', name: 'Фарш Свинина-говядина вес.', unit: 'кг', price: 499 },
       { id: 'wo6', name: 'Фарш Свиной вес.', unit: 'кг', price: 395 }
     ];
+
+    // Хиты продаж
+    const HIT_IDS = new Set(['p6','w5','p7','w6','p13','w11','p14','p15','w12','p18','p19','w14','wo3']);
 
     // =========================
     // СОРТИРОВКА (строго как в App.tsx)
@@ -384,7 +383,7 @@
         return `
           <div class="flex items-center gap-2 px-3 py-2.5 border-b border-slate-50 last:border-0 ${hasQty ? 'bg-green-50/60' : ''}" data-mrow="${p.id}">
             <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium text-slate-700 leading-snug">${escapeHtml(p.name)}</div>
+              <div class="text-sm font-medium text-slate-700 leading-snug">${HIT_IDS.has(p.id) ? '🔥 ' : ''}${escapeHtml(p.name)}</div>
               <div class="text-xs text-slate-400 mt-0.5" data-mmeta>${p.price}\u00a0₽\u00a0/\u00a0${p.unit}${hasQty ? ` · <span class="text-green-600 font-semibold">${sum} ₽</span>` : ''}</div>
             </div>
             <div class="flex items-center gap-1 flex-shrink-0">
@@ -772,7 +771,7 @@
         searchList.innerHTML = list.length
           ? list.map(p => `
               <div class="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-green-50 active:bg-green-100 cursor-pointer" data-pid="${p.id}">
-                <span class="text-sm text-slate-700 leading-tight">${escapeHtml(p.name)}</span>
+                <span class="text-sm text-slate-700 leading-tight">${HIT_IDS.has(p.id) ? '🔥 ' : ''}${escapeHtml(p.name)}</span>
                 <span class="text-xs text-slate-400 whitespace-nowrap">${p.price}₽/${p.unit}</span>
               </div>`).join('')
           : '<p class="text-sm text-slate-400 text-center py-4">Не найдено</p>';
