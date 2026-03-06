@@ -277,6 +277,11 @@
     // МЕССЕНДЖЕРЫ (кнопка "Отправить")
     // =========================
     function openMessenger(kind) {
+      if (!String(state.clientName || '').trim()) {
+        setStatus('error', 'Укажите название клиента');
+        document.getElementById('clientField')?.focus();
+        return;
+      }
       if (state.orderItems.length === 0 || state.orderItems.every(i => !i.productId)) {
         setStatus('error', 'Добавьте товары в заявку');
         return;
@@ -602,7 +607,7 @@
 
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('store', 12, 'text-[#C42121]')} Клиент
+                  ${iconSvg('store', 12, 'text-[#C42121]')} Клиент <span style="color:#C42121">*</span>
                 </label>
 
                 <textarea
