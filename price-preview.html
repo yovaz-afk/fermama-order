@@ -51,32 +51,51 @@
     .btn-share { background: white; color: var(--green-dark); }
     .btn-share:hover { background: #f5f5f5; }
 
-    /* Share popup */
+    /* Share popup / bottom sheet */
+    .share-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 300;
+    }
+    .share-overlay.open { display: block; }
     .share-popup {
       position: fixed;
-      top: 62px;
-      right: 16px;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      padding: 12px;
+      border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 32px rgba(0,0,0,0.2);
+      padding: 8px 16px 32px;
       display: none;
       flex-direction: column;
-      gap: 6px;
-      z-index: 200;
-      min-width: 200px;
+      gap: 4px;
+      z-index: 400;
+      max-height: 80vh;
+      overflow-y: auto;
     }
     .share-popup.open { display: flex; }
+    .share-popup-handle {
+      width: 40px; height: 4px; background: #ddd; border-radius: 2px;
+      margin: 10px auto 14px;
+    }
+    .share-popup-title {
+      font-size: 13px; font-weight: 700; color: #888;
+      text-transform: uppercase; letter-spacing: 1px;
+      text-align: center; margin-bottom: 8px;
+    }
     .share-option {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 8px;
+      gap: 14px;
+      padding: 13px 16px;
+      border-radius: 12px;
       cursor: pointer;
       text-decoration: none;
       color: var(--text);
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 600;
       border: none;
       background: none;
@@ -84,8 +103,12 @@
       width: 100%;
       text-align: left;
     }
-    .share-option:hover { background: #f5f5f5; }
-    .share-option .so-icon { font-size: 18px; width: 24px; text-align: center; }
+    .share-option:hover, .share-option:active { background: #f5f5f5; }
+    .share-option .so-icon {
+      font-size: 22px; width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; background: #f0f0f0; flex-shrink: 0;
+    }
 
     .page-wrapper {
       max-width: 900px;
@@ -368,7 +391,6 @@
       /* Top-bar: статичный, не перекрывает контент */
       .top-bar { position: static; background: white; padding: 10px 12px; justify-content: flex-end; border-bottom: 1px solid #e8e0d4; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
       .top-btn { padding: 9px 14px; font-size: 13px; }
-      .share-popup { top: auto; bottom: 60px; right: 12px; left: 12px; }
 
       .page-wrapper { margin: 0; border-radius: 0; box-shadow: none; }
 
@@ -376,49 +398,49 @@
       .header { padding: 16px 16px 20px; flex-direction: column; align-items: center; text-align: center; gap: 0; position: relative; }
       .header-logo { position: absolute; top: 14px; left: 14px; width: 52px; height: 52px; border-width: 2px; }
       .header-text { text-align: center; width: 100%; padding-top: 4px; }
-      .header-company { font-size: 11px; letter-spacing: 1px; }
-      .header-title { font-size: 22px; margin-bottom: 6px; }
-      .header-subtitle { font-size: 12px; }
+      .header-company { font-size: 12px; letter-spacing: 1px; }
+      .header-title { font-size: 26px; margin-bottom: 6px; }
+      .header-subtitle { font-size: 15px; }
 
       /* Awards */
       .awards-bar { padding: 12px 16px; gap: 6px; }
-      .award-badge { font-size: 10px; padding: 3px 10px; }
+      .award-badge { font-size: 13px; padding: 4px 12px; }
 
       /* Conditions: 2x2 */
       .conditions { padding: 14px 16px; grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .cond-item { align-items: flex-start; }
-      .cond-icon { font-size: 20px; }
-      .cond-title { font-size: 11px; }
-      .cond-value { font-size: 14px; }
+      .cond-icon { font-size: 22px; }
+      .cond-title { font-size: 13px; }
+      .cond-value { font-size: 16px; }
 
       /* Hits */
       .hits-section { padding: 14px 16px 16px; }
-      .hits-title { font-size: 14px; }
+      .hits-title { font-size: 16px; }
       .hits-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-      .hit-card { padding: 10px 12px; }
-      .hit-card-name { font-size: 13px; }
-      .hit-card-price { font-size: 15px; }
-      .hit-card-unit { font-size: 11px; }
+      .hit-card { padding: 12px 14px; }
+      .hit-card-name { font-size: 15px; }
+      .hit-card-price { font-size: 18px; }
+      .hit-card-unit { font-size: 13px; }
 
       /* Products table */
       .products-section { padding: 16px 10px 24px; }
-      .category-name { font-size: 14px; padding: 7px 10px; }
-      table { font-size: 13px; }
-      thead th { padding: 6px 5px; font-size: 10px; }
-      thead th:nth-child(2) { width: 36px; }
-      thead th:nth-child(3) { width: 72px; }
-      thead th:nth-child(4) { width: 54px; }
-      td { padding: 8px 5px; font-size: 13px; }
-      td:nth-child(3) { padding-right: 6px; font-size: 13px; font-weight: 700; }
-      td:nth-child(4) { width: 54px; }
-      .qty-field { width: 44px; height: 26px; font-size: 12px; }
+      .category-name { font-size: 16px; padding: 8px 10px; }
+      table { font-size: 15px; }
+      thead th { padding: 7px 5px; font-size: 13px; }
+      thead th:nth-child(2) { width: 40px; }
+      thead th:nth-child(3) { width: 80px; }
+      thead th:nth-child(4) { width: 58px; }
+      td { padding: 9px 5px; font-size: 15px; }
+      td:nth-child(3) { padding-right: 6px; font-size: 15px; font-weight: 700; }
+      td:nth-child(4) { width: 58px; }
+      .qty-field { width: 48px; height: 28px; font-size: 14px; }
 
       /* Footer */
       .footer { padding: 16px; }
       .footer-top { gap: 16px; flex-wrap: wrap; }
-      .footer-value { font-size: 12px; white-space: normal; }
-      .footer-label { font-size: 9px; }
-      .footer-manager-line { font-size: 11px; }
+      .footer-value { font-size: 14px; white-space: normal; }
+      .footer-label { font-size: 11px; }
+      .footer-manager-line { font-size: 13px; }
       .footer-manager-line span { min-width: 100px; }
     }
 
@@ -439,12 +461,24 @@
   <button class="top-btn btn-pdf" onclick="downloadPDF()">⬇ Скачать PDF</button>
 </div>
 
+<div class="share-overlay" id="shareOverlay" onclick="closeSharePopup()"></div>
 <div class="share-popup" id="sharePopup">
-  <a class="share-option" id="tgShareBtn" href="#" target="_blank" onclick="shareTelegram(event)">
-    <span class="so-icon">✈</span> Telegram
+  <div class="share-popup-handle"></div>
+  <div class="share-popup-title">Поделиться прайсом</div>
+  <button class="share-option" onclick="shareWhatsApp()">
+    <span class="so-icon">💬</span> WhatsApp
+  </button>
+  <a class="share-option" id="tgShareBtn" href="#" onclick="shareTelegram(event)">
+    <span class="so-icon">✈️</span> Telegram
   </a>
+  <button class="share-option" onclick="shareVK()">
+    <span class="so-icon">🔵</span> ВКонтакте
+  </button>
+  <button class="share-option" onclick="shareViber()">
+    <span class="so-icon">💜</span> Viber
+  </button>
   <a class="share-option" id="emailShareBtn" href="#">
-    <span class="so-icon">✉</span> Отправить на почту
+    <span class="so-icon">✉️</span> Отправить на почту
   </a>
   <button class="share-option" onclick="copyLink()">
     <span class="so-icon">🔗</span> Скопировать ссылку
@@ -572,7 +606,7 @@
     const origText = pdfBtn ? pdfBtn.textContent : '';
     if (pdfBtn) { pdfBtn.textContent = '⏳ Генерация…'; pdfBtn.disabled = true; }
     bar.style.display = 'none';
-    document.getElementById('sharePopup').style.display = 'none';
+    closeSharePopup();
     const el = document.getElementById('pdfContent');
     const date = `${now.getDate()}_${now.getMonth()+1}_${now.getFullYear()}`;
     html2pdf().set({
@@ -591,7 +625,7 @@
     });
   }
 
-  // Share: системная шторка → fallback popup
+  // Share: системная шторка → fallback bottom sheet
   function toggleShare(e) {
     e.stopPropagation();
     if (navigator.share) {
@@ -599,34 +633,53 @@
         title: 'Оптовый прайс-лист ФерМама',
         text: 'Натуральные полуфабрикаты собственного производства — оптовый прайс',
         url: window.location.href
-      }).catch(() => {});
+      }).catch(() => {
+        openSharePopup();
+      });
     } else {
-      // Десктоп: открыть fallback-меню
-      document.getElementById('sharePopup').classList.toggle('open');
+      openSharePopup();
     }
   }
-  document.addEventListener('click', () => {
+  function openSharePopup() {
+    document.getElementById('sharePopup').classList.add('open');
+    document.getElementById('shareOverlay').classList.add('open');
+  }
+  function closeSharePopup() {
     document.getElementById('sharePopup').classList.remove('open');
-  });
+    document.getElementById('shareOverlay').classList.remove('open');
+  }
   document.getElementById('sharePopup').addEventListener('click', e => e.stopPropagation());
 
-  // Telegram share (fallback для десктопа)
+  // Мессенджеры
   function shareTelegram(e) {
     e.preventDefault();
     const url = encodeURIComponent(window.location.href);
     const text = encodeURIComponent('Оптовый прайс-лист ФерМама — натуральные полуфабрикаты собственного производства');
     window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
-    document.getElementById('sharePopup').classList.remove('open');
+    closeSharePopup();
   }
-
-  // Copy link
+  function shareWhatsApp() {
+    const text = encodeURIComponent('Оптовый прайс-лист ФерМама — натуральные полуфабрикаты собственного производства: ' + window.location.href);
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+    closeSharePopup();
+  }
+  function shareVK() {
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://vk.com/share.php?url=${url}`, '_blank');
+    closeSharePopup();
+  }
+  function shareViber() {
+    const text = encodeURIComponent('Оптовый прайс-лист ФерМама: ' + window.location.href);
+    window.open(`viber://forward?text=${text}`, '_blank');
+    closeSharePopup();
+  }
   function copyLink() {
     navigator.clipboard.writeText(window.location.href).then(() => {
       alert('Ссылка скопирована!');
     }).catch(() => {
       prompt('Скопируй ссылку:', window.location.href);
     });
-    document.getElementById('sharePopup').classList.remove('open');
+    closeSharePopup();
   }
 
   // Продукты
