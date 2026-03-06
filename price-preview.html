@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ФерМама — Прайс-лист КП</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --green: #6BBF23;
@@ -580,34 +579,10 @@
   const emailBody = encodeURIComponent('Здравствуйте!\n\nПрисылаю прайс-лист на продукцию ФерМама.\nДля оформления заявки напишите нам:\nTelegram: @FerMama_delivery\nТел.: 8 (927) 883-01-69\n\n' + window.location.href);
   document.getElementById('emailShareBtn').href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
 
-  // PDF download
+  // PDF download — используем встроенный print браузера (надёжнее html2canvas)
   function downloadPDF() {
-    if (typeof html2pdf === 'undefined') {
-      alert('Библиотека PDF не загрузилась. Проверьте соединение и обновите страницу.');
-      return;
-    }
-    const bar = document.getElementById('topBar');
-    const pdfBtn = document.querySelector('.btn-pdf');
-    const origText = pdfBtn ? pdfBtn.textContent : '';
-    if (pdfBtn) { pdfBtn.textContent = '⏳ Генерация…'; pdfBtn.disabled = true; }
-    bar.style.display = 'none';
     closeSharePopup();
-    const el = document.getElementById('pdfContent');
-    const date = `${now.getDate()}_${now.getMonth()+1}_${now.getFullYear()}`;
-    html2pdf().set({
-      margin: 0,
-      filename: `ФерМама_Прайс_${date}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, allowTaint: true, logging: false, imageTimeout: 0 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }).from(el).save().then(() => {
-      bar.style.display = 'flex';
-      if (pdfBtn) { pdfBtn.textContent = origText; pdfBtn.disabled = false; }
-    }).catch(() => {
-      bar.style.display = 'flex';
-      if (pdfBtn) { pdfBtn.textContent = origText; pdfBtn.disabled = false; }
-      alert('Ошибка генерации PDF. Попробуйте ещё раз.');
-    });
+    window.print();
   }
 
   // Share: системная шторка → fallback bottom sheet
