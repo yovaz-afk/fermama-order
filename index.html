@@ -288,10 +288,15 @@
       if (kind === 'share') {
         if (navigator.share) {
           navigator.share({ text }).catch(() => {
-            window.location.href = `tg://msg?text=${encodeURIComponent(text)}`;
+            // пользователь закрыл шторку — ничего не делаем
           });
         } else {
-          window.location.href = `tg://msg?text=${encodeURIComponent(text)}`;
+          // нет Web Share API (десктоп) — копируем в буфер
+          navigator.clipboard.writeText(text).then(() => {
+            setStatus('success', 'Текст скопирован — вставьте в нужный мессенджер');
+          }).catch(() => {
+            setStatus('error', 'Поделиться недоступно — скопируйте текст кнопкой слева');
+          });
         }
         return;
       }
@@ -299,7 +304,8 @@
       const encoded = encodeURIComponent(text);
 
       if (kind === 'telegram') {
-        window.location.href = `tg://msg?text=${encoded}`;
+        const appUrl = encodeURIComponent(window.location.href);
+        window.open(`https://t.me/share/url?url=${appUrl}&text=${encoded}`, '_blank');
         return;
       }
 
