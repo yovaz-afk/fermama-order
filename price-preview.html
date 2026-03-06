@@ -270,7 +270,6 @@
     }
     thead th:nth-child(2) { text-align: center; width: 64px; }
     thead th:nth-child(3) { text-align: right;  width: 100px; }
-    thead th:nth-child(4) { text-align: center; width: 90px; }
 
     tbody tr { border-bottom: 1px solid #f0f0f0; }
     tbody tr:last-child { border-bottom: none; }
@@ -436,25 +435,55 @@
     }
 
     /* ---- PRINT ---- */
+    @page { size: A4 portrait; margin: 8mm 10mm; }
+
     @media print {
-      body { background: white; }
-      .page-wrapper { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
+      /* Рендерим в A4-ширине — иначе мобиль сжимает всё */
+      html { width: 210mm; }
+      body { background: white; width: 210mm; }
+
+      .page-wrapper { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; width: 100%; }
       .top-bar, .share-popup, .share-overlay { display: none !important; }
       .category-block { page-break-inside: avoid; }
 
-      /* Хедер: фиксируем чтобы не обрезался */
-      .header { background: #6BBF23 !important; padding: 28px 32px !important; }
-      .header-title { color: white !important; font-size: 28px !important; }
-      .header-subtitle { color: rgba(255,255,255,0.9) !important; font-size: 13px !important; white-space: normal !important; }
-      .header-company { color: rgba(255,255,255,0.85) !important; }
-      .header-date { color: rgba(255,255,255,0.75) !important; }
+      /* Хедер */
+      .header { background: #6BBF23 !important; padding: 24px 28px !important; flex-direction: row !important; align-items: center !important; text-align: left !important; }
+      .header-logo { position: static !important; width: 80px !important; height: 80px !important; }
+      .header-text { padding-top: 0 !important; text-align: left !important; }
+      .header-company { color: rgba(255,255,255,0.85) !important; font-size: 11px !important; }
+      .header-title { color: white !important; font-size: 26px !important; white-space: normal !important; }
+      .header-subtitle { color: rgba(255,255,255,0.9) !important; font-size: 12px !important; white-space: normal !important; }
+      .header-date { color: rgba(255,255,255,0.75) !important; font-size: 11px !important; }
 
-      /* Коричневая секция наград */
+      /* Награды */
       .awards-bar { background: #5C3317 !important; }
-      .award-badge { background: rgba(255,255,255,0.12) !important; color: white !important; }
+      .award-badge { background: rgba(255,255,255,0.12) !important; color: white !important; font-size: 11px !important; }
+
+      /* Условия */
+      .conditions { background: #FFF9F0 !important; }
+      .cond-value { font-size: 13px !important; }
+      .cond-title { font-size: 10px !important; }
 
       /* Хиты */
       .hits-section { background: #FFF9F0 !important; }
+      .hit-card { background: white !important; }
+      .hit-card-name { font-size: 12px !important; }
+      .hit-card-price { font-size: 14px !important; }
+      .hit-card-unit { font-size: 10px !important; }
+
+      /* Таблица — крупные читаемые шрифты */
+      .category-name { font-size: 13px !important; padding: 6px 10px !important; }
+      table { font-size: 12px !important; width: 100% !important; }
+      thead th { font-size: 10px !important; padding: 5px 8px !important; }
+      td { font-size: 12px !important; padding: 7px 8px !important; }
+      td:nth-child(3) { font-size: 12px !important; font-weight: 700 !important; }
+      .unit-badge { font-size: 10px !important; padding: 2px 5px !important; }
+
+      /* Подвал */
+      .footer { background: #5C3317 !important; }
+      .footer-value { color: white !important; font-size: 12px !important; }
+      .footer-label { color: rgba(255,255,255,0.7) !important; font-size: 9px !important; }
+      .footer-manager-line { color: rgba(255,255,255,0.85) !important; font-size: 11px !important; }
     }
   </style>
 </head>
