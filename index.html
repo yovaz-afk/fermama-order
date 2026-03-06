@@ -96,7 +96,7 @@
     ];
 
     // Хиты продаж
-    const HIT_IDS = new Set(['p6','w5','p7','w6','p13','w11','p14','p15','w12','p18','p19','w14','wo3']);
+    const HIT_IDS = new Set(['p6','w5','p7','w6','p13','w11','p15','w12','p19','w14','wo3']);
 
     // =========================
     // СОРТИРОВКА (строго как в App.tsx)
@@ -554,9 +554,15 @@
               <div class="bg-green-600 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-green-100">Ф</div>
               <h1 class="font-bold text-slate-800 tracking-tight text-lg">Заявки ФерМама</h1>
             </div>
-            <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
-              ${iconSvg('rotateCcw', 14)} Очистить
-            </button>
+            <div class="flex items-center gap-2">
+              <a href="price-preview.html" target="_blank"
+                class="flex items-center gap-1 text-xs font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl transition-colors">
+                📄 Прайс
+              </a>
+              <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
+                ${iconSvg('rotateCcw', 14)} Очистить
+              </button>
+            </div>
           </header>
 
           <main class="px-4 py-6 space-y-6">
