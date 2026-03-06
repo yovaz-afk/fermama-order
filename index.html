@@ -11,10 +11,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #EFEFF4; }
+    :root {
+      --bg: #FAF8F5;
+      --primary: #C42121;
+      --accent: #F47B25;
+      --grad: linear-gradient(135deg, #C42121 0%, #F47B25 100%);
+      --border-warm: #E7E1DA;
+      --secondary: #EDE8E0;
+      --shadow-btn: 0 4px 16px -3px rgba(196,33,33,0.35);
+    }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); -webkit-font-smoothing: antialiased; }
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type="number"] { -moz-appearance: textfield; }
+    .btn-grad { background: var(--grad) !important; box-shadow: var(--shadow-btn) !important; }
+    .btn-grad:active { transform: scale(0.97); }
+    .text-grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   </style>
 </head>
 
@@ -551,12 +563,12 @@
         <div class="min-h-screen max-w-lg mx-auto pb-48">
           <header class="bg-white sticky top-0 z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg" style="background:#F5A623;box-shadow:0 4px 12px rgba(245,166,35,0.35)">Ф</div>
-              <h1 class="font-bold text-slate-800 tracking-tight text-lg">Заявки ФерМама</h1>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold btn-grad">Ф</div>
+              <h1 class="font-bold tracking-tight text-lg text-grad">Заявки ФерМама</h1>
             </div>
             <div class="flex items-center gap-2">
               <a href="price-preview.html" target="_blank"
-                class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl transition-colors" style="background:#F5A623">
+                class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl btn-grad transition-all">
                 📄 Прайс
               </a>
               <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
@@ -568,15 +580,15 @@
           <main class="px-4 py-6 space-y-6">
             <div id="statusBox"></div>
 
-            <section class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+            <section class="bg-white p-5 rounded-3xl shadow-sm border space-y-4" style="border-color:var(--border-warm)">
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('user', 12, 'text-[#F5A623]')} Менеджер
+                  ${iconSvg('user', 12, 'text-[#C42121]')} Менеджер
                 </label>
                 <div class="relative">
                   <select
                     id="managerSelect"
-                    class="w-full appearance-none bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all cursor-pointer"
+                    class="w-full appearance-none rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 transition-all cursor-pointer" style="background:var(--bg);border:1.5px solid var(--border-warm)"
                   >
                     ${MANAGERS.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
                   </select>
@@ -588,26 +600,26 @@
 
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('store', 12, 'text-[#F5A623]')} Клиент
+                  ${iconSvg('store', 12, 'text-[#C42121]')} Клиент
                 </label>
 
                 <textarea
                   id="clientField"
                   rows="1"
                   placeholder="Название магазина / ФИО"
-                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all resize-none overflow-hidden"
+                  class="w-full rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 transition-all resize-none overflow-hidden" style="background:var(--bg);border:1.5px solid var(--border-warm)"
                 ></textarea>
               </div>
 
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('calendar', 12, 'text-[#F5A623]')} Дата приёма
+                  ${iconSvg('calendar', 12, 'text-[#C42121]')} Дата приёма
                 </label>
                 <input
                   id="dateField"
                   type="date"
                   value="${state.orderDate}"
-                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all"
+                  class="w-full rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 transition-all" style="background:var(--bg);border:1.5px solid var(--border-warm)"
                 />
               </div>
             </section>
@@ -616,8 +628,8 @@
               <div class="flex items-center justify-between px-1">
                 <h3 class="font-black text-slate-800 text-sm tracking-tight uppercase">Состав заявки</h3>
                 <div class="flex items-center gap-2">
-                  <span id="selectedCount" class="text-[10px] px-2 py-0.5 rounded-full font-black text-white" style="background:#F5A623">0 ПОЗ.</span>
-                  <div class="flex bg-slate-100 rounded-xl p-0.5">
+                  <span id="selectedCount" class="text-[10px] px-2 py-0.5 rounded-full font-black text-white btn-grad">0 ПОЗ.</span>
+                  <div class="flex rounded-xl p-0.5" style="background:var(--secondary)">
                     <button id="viewBtnRows" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white shadow-sm text-slate-700">Строки</button>
                     <button id="viewBtnMatrix" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-400">Таблица</button>
                   </div>
@@ -628,7 +640,7 @@
                 <div id="rows" class="space-y-3"></div>
                 <button
                   id="addRowBtn"
-                  class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed rounded-2xl font-bold text-sm transition-all active:scale-[0.98] shadow-sm" style="border-color:#F5A623;color:#F5A623"
+                  class="w-full flex items-center justify-center gap-2 py-4 border-2 border-dashed rounded-2xl font-bold text-sm transition-all active:scale-[0.98]" style="border-color:var(--accent);color:var(--primary);background:var(--bg)"
                   type="button"
                   style="padding-top: 18px; padding-bottom: 18px;"
                 >
@@ -643,28 +655,28 @@
 
             <section class="space-y-1">
               <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider px-1">
-                ${iconSvg('messageSquare', 12, 'text-[#F5A623]')} Комментарий
+                ${iconSvg('messageSquare', 12, 'text-[#C42121]')} Комментарий
               </label>
               <textarea
                 id="commentField"
                 placeholder="Дополнительная информация к заказу..."
-                class="w-full min-h-[100px] bg-white border border-slate-100 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all shadow-sm resize-none"
+                class="w-full min-h-[100px] bg-white rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 transition-all shadow-sm resize-none" style="border:1.5px solid var(--border-warm)"
               ></textarea>
             </section>
           </main>
 
-          <footer class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-slate-100 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 rounded-t-[2.5rem]">
+          <footer class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto backdrop-blur-md p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20 rounded-t-[2.5rem]" style="background:rgba(250,248,245,0.97);border-top:1px solid var(--border-warm)">
             <div class="flex items-center justify-between mb-4 px-2">
               <span class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Итого к оплате</span>
               <span class="text-2xl font-black text-slate-800">
-                <span id="totalSum">0</span> <span class="text-lg font-bold" style="color:#F5A623">₽</span>
+                <span id="totalSum">0</span> <span class="text-lg font-bold text-grad">₽</span>
               </span>
             </div>
 
             <div class="flex gap-2">
               <button
                 id="copyBtn"
-                class="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all active:scale-95"
+                class="flex-1 h-14 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all active:scale-95" style="background:var(--secondary);color:#555"
                 type="button"
                 title="Скопировать текст"
               >
@@ -674,7 +686,7 @@
               <div class="flex-[3] relative">
                 <button
                   id="sendBtn"
-                  class="w-full h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg transition-all active:scale-95" style="background:#F5A623;box-shadow:0 8px 24px rgba(245,166,35,0.4)"
+                  class="w-full h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg transition-all active:scale-95 btn-grad"
                   type="button"
                 >
                   ОТПРАВИТЬ ${iconSvg('share', 20)}
