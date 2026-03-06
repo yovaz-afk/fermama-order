@@ -609,6 +609,7 @@
     document.getElementById('shareOverlay').classList.remove('open');
   }
   document.getElementById('sharePopup').addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSharePopup(); });
 
   // Мессенджеры
   function shareTelegram(e) {
@@ -630,8 +631,13 @@
   }
   function shareViber() {
     const text = encodeURIComponent('Оптовый прайс-лист ФерМама: ' + window.location.href);
-    window.open(`viber://forward?text=${text}`, '_blank');
+    const w = window.open(`viber://forward?text=${text}`, '_blank');
     closeSharePopup();
+    setTimeout(() => {
+      if (!w || w.closed) {
+        if (confirm('Viber не найден. Скопировать ссылку в буфер?')) copyLink();
+      }
+    }, 1500);
   }
   function copyLink() {
     navigator.clipboard.writeText(window.location.href).then(() => {
