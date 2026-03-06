@@ -11,14 +11,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #EFEFF4; }
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type="number"] { -moz-appearance: textfield; }
   </style>
 </head>
 
-<body class="bg-slate-50">
+<body>
   <div id="app"></div>
 
   <script>
@@ -548,15 +548,15 @@
       const app = document.getElementById('app');
 
       app.innerHTML = `
-        <div class="min-h-screen max-w-lg mx-auto pb-48 bg-slate-50/50">
+        <div class="min-h-screen max-w-lg mx-auto pb-48">
           <header class="bg-white sticky top-0 z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-2">
-              <div class="bg-green-600 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg shadow-green-100">Ф</div>
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold shadow-lg" style="background:#F5A623;box-shadow:0 4px 12px rgba(245,166,35,0.35)">Ф</div>
               <h1 class="font-bold text-slate-800 tracking-tight text-lg">Заявки ФерМама</h1>
             </div>
             <div class="flex items-center gap-2">
               <a href="price-preview.html" target="_blank"
-                class="flex items-center gap-1 text-xs font-bold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-xl transition-colors">
+                class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl transition-colors" style="background:#F5A623">
                 📄 Прайс
               </a>
               <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
@@ -571,12 +571,12 @@
             <section class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 space-y-4">
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('user', 12, 'text-green-600')} Менеджер
+                  ${iconSvg('user', 12, 'text-[#F5A623]')} Менеджер
                 </label>
                 <div class="relative">
                   <select
                     id="managerSelect"
-                    class="w-full appearance-none bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all cursor-pointer"
+                    class="w-full appearance-none bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all cursor-pointer"
                   >
                     ${MANAGERS.map(m => `<option value="${m.name}">${m.name}</option>`).join('')}
                   </select>
@@ -588,26 +588,26 @@
 
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('store', 12, 'text-green-600')} Клиент
+                  ${iconSvg('store', 12, 'text-[#F5A623]')} Клиент
                 </label>
 
                 <textarea
                   id="clientField"
                   rows="1"
                   placeholder="Название магазина / ФИО"
-                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all resize-none overflow-hidden"
+                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all resize-none overflow-hidden"
                 ></textarea>
               </div>
 
               <div class="space-y-1">
                 <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider">
-                  ${iconSvg('calendar', 12, 'text-green-600')} Дата приёма
+                  ${iconSvg('calendar', 12, 'text-[#F5A623]')} Дата приёма
                 </label>
                 <input
                   id="dateField"
                   type="date"
                   value="${state.orderDate}"
-                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all"
+                  class="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all"
                 />
               </div>
             </section>
@@ -616,7 +616,7 @@
               <div class="flex items-center justify-between px-1">
                 <h3 class="font-black text-slate-800 text-sm tracking-tight uppercase">Состав заявки</h3>
                 <div class="flex items-center gap-2">
-                  <span id="selectedCount" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black">0 ПОЗ.</span>
+                  <span id="selectedCount" class="text-[10px] px-2 py-0.5 rounded-full font-black text-white" style="background:#F5A623">0 ПОЗ.</span>
                   <div class="flex bg-slate-100 rounded-xl p-0.5">
                     <button id="viewBtnRows" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white shadow-sm text-slate-700">Строки</button>
                     <button id="viewBtnMatrix" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-400">Таблица</button>
@@ -628,7 +628,7 @@
                 <div id="rows" class="space-y-3"></div>
                 <button
                   id="addRowBtn"
-                  class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed border-green-400 rounded-2xl text-green-600 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
+                  class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed rounded-2xl font-bold text-sm transition-all active:scale-[0.98] shadow-sm" style="border-color:#F5A623;color:#F5A623"
                   type="button"
                   style="padding-top: 18px; padding-bottom: 18px;"
                 >
@@ -643,12 +643,12 @@
 
             <section class="space-y-1">
               <label class="text-[10px] text-slate-400 font-black uppercase flex items-center gap-1 tracking-wider px-1">
-                ${iconSvg('messageSquare', 12, 'text-green-600')} Комментарий
+                ${iconSvg('messageSquare', 12, 'text-[#F5A623]')} Комментарий
               </label>
               <textarea
                 id="commentField"
                 placeholder="Дополнительная информация к заказу..."
-                class="w-full min-h-[100px] bg-white border border-slate-100 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all shadow-sm resize-none"
+                class="w-full min-h-[100px] bg-white border border-slate-100 rounded-3xl px-4 py-3 text-sm font-medium text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#F5A623]/30 transition-all shadow-sm resize-none"
               ></textarea>
             </section>
           </main>
@@ -657,7 +657,7 @@
             <div class="flex items-center justify-between mb-4 px-2">
               <span class="text-slate-400 font-black uppercase text-[10px] tracking-widest">Итого к оплате</span>
               <span class="text-2xl font-black text-slate-800">
-                <span id="totalSum">0</span> <span class="text-lg font-bold text-green-600">₽</span>
+                <span id="totalSum">0</span> <span class="text-lg font-bold" style="color:#F5A623">₽</span>
               </span>
             </div>
 
@@ -674,7 +674,7 @@
               <div class="flex-[3] relative">
                 <button
                   id="sendBtn"
-                  class="w-full h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg bg-[#24A1DE] hover:bg-[#1e8dbf] shadow-xl shadow-blue-100 transition-all active:scale-95"
+                  class="w-full h-14 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg transition-all active:scale-95" style="background:#F5A623;box-shadow:0 8px 24px rgba(245,166,35,0.4)"
                   type="button"
                 >
                   ОТПРАВИТЬ ${iconSvg('share', 20)}
