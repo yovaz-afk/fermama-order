@@ -363,6 +363,58 @@
       margin-left: 8px;
     }
 
+    /* ---- MOBILE ---- */
+    @media (max-width: 640px) {
+      .page-wrapper { margin: 0; border-radius: 0; box-shadow: none; }
+
+      /* Header: лого маленький слева, текст по центру */
+      .header { padding: 16px 16px 20px; flex-direction: column; align-items: center; text-align: center; gap: 0; position: relative; }
+      .header-logo { position: absolute; top: 14px; left: 14px; width: 52px; height: 52px; border-width: 2px; }
+      .header-text { text-align: center; width: 100%; padding-top: 4px; }
+      .header-company { font-size: 11px; letter-spacing: 1px; }
+      .header-title { font-size: 22px; margin-bottom: 6px; }
+      .header-subtitle { font-size: 12px; }
+
+      /* Awards */
+      .awards-bar { padding: 12px 16px; gap: 6px; }
+      .award-badge { font-size: 10px; padding: 3px 10px; }
+
+      /* Conditions: 2x2 */
+      .conditions { padding: 14px 16px; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .cond-item { align-items: flex-start; }
+      .cond-icon { font-size: 18px; }
+      .cond-title { font-size: 10px; }
+      .cond-value { font-size: 12px; }
+
+      /* Hits */
+      .hits-section { padding: 14px 16px 16px; }
+      .hits-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .hit-card { padding: 10px 12px; }
+      .hit-card-name { font-size: 11px; }
+      .hit-card-price { font-size: 12px; }
+
+      /* Products table — убираем колонку "Кол-во" на мобиле, показываем поле ввода в имени */
+      .products-section { padding: 16px 10px 24px; }
+      .category-name { font-size: 13px; padding: 6px 10px; }
+      table { font-size: 12px; }
+      thead th { padding: 6px 5px; font-size: 9px; }
+      thead th:nth-child(2) { width: 36px; }
+      thead th:nth-child(3) { width: 70px; }
+      thead th:nth-child(4) { width: 52px; }
+      td { padding: 7px 5px; font-size: 12px; }
+      td:nth-child(3) { padding-right: 6px; font-size: 12px; }
+      td:nth-child(4) { width: 52px; }
+      .qty-field { width: 42px; height: 24px; font-size: 11px; }
+
+      /* Footer */
+      .footer { padding: 16px; }
+      .footer-top { gap: 16px; flex-wrap: wrap; }
+      .footer-value { font-size: 12px; white-space: normal; }
+      .footer-label { font-size: 9px; }
+      .footer-manager-line { font-size: 11px; }
+      .footer-manager-line span { min-width: 100px; }
+    }
+
     /* ---- PRINT ---- */
     @media print {
       body { background: white; }
