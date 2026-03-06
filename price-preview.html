@@ -273,18 +273,6 @@
     td:nth-child(1) { color: #222; font-weight: 500; }
     td:nth-child(2) { text-align: center; width: 64px; color: #777; font-size: 12px; white-space: nowrap; }
     td:nth-child(3) { text-align: right;  width: 100px; font-weight: 700; color: var(--green-dark); white-space: nowrap; padding-right: 20px; }
-    td:nth-child(4) { text-align: center; width: 90px; }
-
-    .qty-field {
-      width: 70px;
-      height: 28px;
-      border: 1.5px solid #ddd;
-      border-radius: 6px;
-      text-align: center;
-      font-size: 13px;
-      color: #333;
-      background: white;
-    }
 
     .unit-badge {
       display: inline-block;
@@ -429,11 +417,8 @@
       thead th { padding: 7px 5px; font-size: 13px; }
       thead th:nth-child(2) { width: 40px; }
       thead th:nth-child(3) { width: 80px; }
-      thead th:nth-child(4) { width: 58px; }
       td { padding: 9px 5px; font-size: 15px; }
       td:nth-child(3) { padding-right: 6px; font-size: 15px; font-weight: 700; }
-      td:nth-child(4) { width: 58px; }
-      .qty-field { width: 48px; height: 28px; font-size: 14px; }
 
       /* Footer */
       .footer { padding: 16px; }
@@ -789,7 +774,6 @@
         <td>${rowNum++}. ${p.name}${medal}</td>
         <td><span class="unit-badge ${p.unit === 'шт' ? 'sht' : 'kg'}">${p.unit}</span></td>
         <td>${p.price.toLocaleString('ru')} ₽</td>
-        <td><input class="qty-field" type="text"/></td>
       </tr>
     `;
     }).join('');
@@ -798,7 +782,7 @@
       <div class="category-name">${cat}</div>
       <table>
         <thead><tr>
-          <th>Наименование</th><th>Ед.</th><th>Цена</th><th>Кол-во</th>
+          <th>Наименование</th><th>Ед.</th><th>Цена</th>
         </tr></thead>
         <tbody>${rows}</tbody>
       </table>
