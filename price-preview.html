@@ -17,6 +17,13 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* Принудительная печать фонов и цветов */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
     body {
       font-family: Inter, system-ui, sans-serif;
       background: #e8e8e8;
@@ -432,8 +439,22 @@
     @media print {
       body { background: white; }
       .page-wrapper { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; }
-      .top-bar, .share-popup { display: none !important; }
+      .top-bar, .share-popup, .share-overlay { display: none !important; }
       .category-block { page-break-inside: avoid; }
+
+      /* Хедер: фиксируем чтобы не обрезался */
+      .header { background: #6BBF23 !important; padding: 28px 32px !important; }
+      .header-title { color: white !important; font-size: 28px !important; }
+      .header-subtitle { color: rgba(255,255,255,0.9) !important; font-size: 13px !important; white-space: normal !important; }
+      .header-company { color: rgba(255,255,255,0.85) !important; }
+      .header-date { color: rgba(255,255,255,0.75) !important; }
+
+      /* Коричневая секция наград */
+      .awards-bar { background: #5C3317 !important; }
+      .award-badge { background: rgba(255,255,255,0.12) !important; color: white !important; }
+
+      /* Хиты */
+      .hits-section { background: #FFF9F0 !important; }
     }
   </style>
 </head>
