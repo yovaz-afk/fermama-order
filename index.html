@@ -570,7 +570,7 @@
             </div>
             <div class="flex items-center gap-2">
               <a href="price-preview.html" target="_blank"
-                class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl btn-grad transition-all">
+                class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl btn-grad transition-all whitespace-nowrap">
                 📄 Прайс
               </a>
               <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
@@ -630,7 +630,7 @@
               <div class="flex items-center justify-between px-1">
                 <h3 class="font-black text-slate-800 text-sm tracking-tight uppercase">Состав заявки</h3>
                 <div class="flex items-center gap-2">
-                  <span id="selectedCount" class="text-[10px] px-2 py-0.5 rounded-full font-black text-white btn-grad">0 ПОЗ.</span>
+                  <span id="selectedCount" class="text-[10px] px-2 py-0.5 rounded-full font-black text-white btn-grad whitespace-nowrap">0 ПОЗ.</span>
                   <div class="flex rounded-xl p-0.5" style="background:var(--secondary)">
                     <button id="viewBtnRows" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white shadow-sm text-slate-700">Строки</button>
                     <button id="viewBtnMatrix" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-400">Таблица</button>
@@ -694,14 +694,6 @@
                   ОТПРАВИТЬ ${iconSvg('share', 20)}
                 </button>
 
-                <div id="sendMenu" class="hidden absolute bottom-[64px] left-0 right-0 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden">
-                  <button data-send="share" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                    ${iconSvg('share', 18)} Поделиться… (выбор мессенджера)
-                  </button>
-                  <button data-send="telegram" class="w-full px-4 py-3 text-left text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
-                    ${iconSvg('tg', 18)} Telegram
-                  </button>
-                </div>
               </div>
             </div>
           </footer>
@@ -1006,26 +998,14 @@
       document.getElementById('viewBtnMatrix').addEventListener('click', () => switchViewMode('matrix'));
 
       const sendBtn = document.getElementById('sendBtn');
-      const menu = document.getElementById('sendMenu');
 
-      sendBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menu.classList.toggle('hidden');
+      sendBtn.addEventListener('click', () => {
+        openMessenger('share');
       });
 
-      document.addEventListener('click', (e) => {
-        // Close send menu
-        if (!sendBtn.contains(e.target) && !menu.contains(e.target)) menu.classList.add('hidden');
+      document.addEventListener('click', () => {
         // Close search dropdowns
         document.querySelectorAll('[data-row="searchDropdown"]').forEach(d => d.classList.add('hidden'));
-      });
-
-      menu.querySelectorAll('[data-send]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const kind = btn.getAttribute('data-send');
-          menu.classList.add('hidden');
-          openMessenger(kind);
-        });
       });
     }
 

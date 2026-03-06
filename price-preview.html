@@ -563,7 +563,14 @@
 
   // PDF download
   function downloadPDF() {
+    if (typeof html2pdf === 'undefined') {
+      alert('Библиотека PDF не загрузилась. Проверьте соединение и обновите страницу.');
+      return;
+    }
     const bar = document.getElementById('topBar');
+    const pdfBtn = document.querySelector('.btn-pdf');
+    const origText = pdfBtn ? pdfBtn.textContent : '';
+    if (pdfBtn) { pdfBtn.textContent = '⏳ Генерация…'; pdfBtn.disabled = true; }
     bar.style.display = 'none';
     document.getElementById('sharePopup').style.display = 'none';
     const el = document.getElementById('pdfContent');
@@ -572,10 +579,15 @@
       margin: 0,
       filename: `ФерМама_Прайс_${date}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }).from(el).save().then(() => {
       bar.style.display = 'flex';
+      if (pdfBtn) { pdfBtn.textContent = origText; pdfBtn.disabled = false; }
+    }).catch(() => {
+      bar.style.display = 'flex';
+      if (pdfBtn) { pdfBtn.textContent = origText; pdfBtn.disabled = false; }
+      alert('Ошибка генерации PDF. Попробуйте ещё раз.');
     });
   }
 
