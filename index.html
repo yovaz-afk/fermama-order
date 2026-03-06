@@ -369,6 +369,7 @@
       state.orderItems = [];
       state.orderComment = '';
       state.clientName = '';
+      state.selectedManager = '';
       state.status = null;
 
       const list = document.getElementById('rows');
@@ -378,6 +379,8 @@
       if (c) c.value = '';
       const com = document.getElementById('commentField');
       if (com) com.value = '';
+      const mgr = document.getElementById('managerSelect');
+      if (mgr) mgr.value = '';
 
       if (state.viewMode === 'matrix') renderMatrix();
 
