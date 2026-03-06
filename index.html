@@ -172,7 +172,8 @@
       orderDate: new Date().toISOString().split('T')[0],
       orderComment: '',
       orderItems: [], // {id, productId, quantity, qtyText}
-      status: null // {type:'success'|'error', msg:string}
+      status: null, // {type:'success'|'error', msg:string}
+      viewMode: 'rows' // 'rows' | 'matrix'
     };
 
     // =========================
@@ -354,10 +355,190 @@
         const com = document.getElementById('commentField');
         if (com) com.value = '';
 
+        if (state.viewMode === 'matrix') renderMatrix();
+
         updateFooterTotals();
         updateHeaderResetVisibility();
         updateSelectedCount();
         renderStatusOnly();
+      }
+    }
+
+    // =========================
+    // ORDER MATRIX
+    // =========================
+    function renderMatrix() {
+      const container = document.getElementById('matrixContainer');
+      if (!container) return;
+
+      const searchVal = (document.getElementById('matrixSearch')?.value || '').toLowerCase().trim();
+      const products = searchVal
+        ? SORTED_PRODUCTS.filter(p => p.name.toLowerCase().includes(searchVal))
+        : SORTED_PRODUCTS;
+
+      const rowsHtml = products.map(p => {
+        const ri = state.orderItems.find(i => i.productId === p.id);
+        const qty = ri ? (ri.qtyText || '') : '';
+        const hasQty = qty && parseFloat(qty) > 0;
+        const sum = hasQty ? formatRuMoney((parseFloat(qty) || 0) * p.price) : '';
+        return `
+          <div class="flex items-center gap-2 px-3 py-2.5 border-b border-slate-50 last:border-0 ${hasQty ? 'bg-green-50/60' : ''}" data-mrow="${p.id}">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-slate-700 leading-snug">${escapeHtml(p.name)}</div>
+              <div class="text-xs text-slate-400 mt-0.5" data-mmeta>${p.price}\u00a0₽\u00a0/\u00a0${p.unit}${hasQty ? ` · <span class="text-green-600 font-semibold">${sum} ₽</span>` : ''}</div>
+            </div>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button type="button" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center font-bold text-base text-slate-600 active:scale-90 transition-all select-none" data-mminus="${p.id}">−</button>
+              <input
+                type="text"
+                inputmode="${p.unit === 'кг' ? 'decimal' : 'numeric'}"
+                placeholder="—"
+                value="${escapeHtml(qty)}"
+                class="w-14 text-sm font-bold text-center rounded-lg px-1 py-1.5 border focus:outline-none focus:border-green-500 transition-colors ${hasQty ? 'bg-white border-green-400 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-500'}"
+                data-mqty="${p.id}"
+              />
+              <button type="button" class="w-8 h-8 rounded-lg ${hasQty ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} flex items-center justify-center font-bold text-base active:scale-90 transition-all select-none" data-mplus="${p.id}">+</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+          <div class="p-3 bg-white border-b border-slate-100 sticky top-0 z-10">
+            <input
+              id="matrixSearch"
+              type="text"
+              placeholder="Фильтр по каталогу..."
+              value="${escapeHtml(searchVal)}"
+              class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-green-500 transition-colors"
+            />
+          </div>
+          <div>${rowsHtml || '<p class="text-sm text-slate-400 text-center py-6">Ничего не найдено</p>'}</div>
+        </div>
+      `;
+
+      document.getElementById('matrixSearch').addEventListener('input', renderMatrix);
+
+      container.querySelectorAll('[data-mqty]').forEach(inp => {
+        const pid = inp.getAttribute('data-mqty');
+        inp.addEventListener('input', (e) => {
+          updateMatrixQtyState(pid, e.target.value);
+          partialMatrixRowUpdate(pid, true);
+          updateFooterTotals();
+          updateSelectedCount();
+          updateHeaderResetVisibility();
+        });
+        inp.addEventListener('blur', (e) => {
+          updateMatrixQtyState(pid, e.target.value);
+          partialMatrixRowUpdate(pid, false);
+          updateFooterTotals();
+          updateSelectedCount();
+          updateHeaderResetVisibility();
+        });
+      });
+
+      container.querySelectorAll('[data-mplus]').forEach(btn => {
+        const pid = btn.getAttribute('data-mplus');
+        btn.addEventListener('click', () => {
+          const p = productById(pid);
+          const ri = state.orderItems.find(i => i.productId === pid);
+          const step = p?.unit === 'кг' ? 0.5 : 1;
+          const cur = ri ? (parseFloat(ri.qtyText) || 0) : 0;
+          updateMatrixQtyState(pid, String(+(cur + step).toFixed(2)));
+          partialMatrixRowUpdate(pid, false);
+          updateFooterTotals();
+          updateSelectedCount();
+          updateHeaderResetVisibility();
+        });
+      });
+
+      container.querySelectorAll('[data-mminus]').forEach(btn => {
+        const pid = btn.getAttribute('data-mminus');
+        btn.addEventListener('click', () => {
+          const p = productById(pid);
+          const ri = state.orderItems.find(i => i.productId === pid);
+          const step = p?.unit === 'кг' ? 0.5 : 1;
+          const cur = ri ? (parseFloat(ri.qtyText) || 0) : 0;
+          const next = Math.max(0, +(cur - step).toFixed(2));
+          updateMatrixQtyState(pid, next > 0 ? String(next) : '');
+          partialMatrixRowUpdate(pid, false);
+          updateFooterTotals();
+          updateSelectedCount();
+          updateHeaderResetVisibility();
+        });
+      });
+    }
+
+    function updateMatrixQtyState(pid, valStr) {
+      const p = productById(pid);
+      if (!p) return;
+      valStr = String(valStr || '').replace(',', '.').trim();
+      const parsed = parseFloat(valStr);
+      const isZero = !valStr || isNaN(parsed) || parsed <= 0;
+      let ri = state.orderItems.find(i => i.productId === pid);
+      if (isZero) {
+        if (ri) state.orderItems = state.orderItems.filter(i => i.productId !== pid);
+      } else {
+        const qty = p.unit === 'шт' ? Math.floor(parsed) : parsed;
+        const qtyText = String(p.unit === 'шт' ? qty : parsed);
+        if (ri) { ri.qtyText = qtyText; ri.quantity = qty; }
+        else state.orderItems.push({ id: uid(), productId: pid, quantity: qty, qtyText });
+      }
+    }
+
+    function partialMatrixRowUpdate(pid, preserveInput) {
+      const p = productById(pid);
+      if (!p) return;
+      const ri = state.orderItems.find(i => i.productId === pid);
+      const hasQty = ri && parseFloat(ri.qtyText) > 0;
+      const row = document.querySelector(`[data-mrow="${pid}"]`);
+      if (!row) return;
+
+      if (hasQty) row.classList.add('bg-green-50/60');
+      else row.classList.remove('bg-green-50/60');
+
+      const meta = row.querySelector('[data-mmeta]');
+      if (meta) {
+        const sum = hasQty ? formatRuMoney((parseFloat(ri.qtyText) || 0) * p.price) : '';
+        meta.innerHTML = `${p.price}\u00a0₽\u00a0/\u00a0${p.unit}${hasQty ? ` · <span class="text-green-600 font-semibold">${sum} ₽</span>` : ''}`;
+      }
+
+      if (!preserveInput) {
+        const inp = row.querySelector(`[data-mqty="${pid}"]`);
+        if (inp) {
+          inp.value = ri ? (ri.qtyText || '') : '';
+          inp.className = `w-14 text-sm font-bold text-center rounded-lg px-1 py-1.5 border focus:outline-none focus:border-green-500 transition-colors ${hasQty ? 'bg-white border-green-400 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-500'}`;
+        }
+        const plusBtn = row.querySelector(`[data-mplus="${pid}"]`);
+        if (plusBtn) plusBtn.className = `w-8 h-8 rounded-lg ${hasQty ? 'bg-green-100 hover:bg-green-200 text-green-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} flex items-center justify-center font-bold text-base active:scale-90 transition-all select-none`;
+      }
+    }
+
+    function switchViewMode(mode) {
+      state.viewMode = mode;
+      const rowsSection = document.getElementById('rowsSection');
+      const matrixSection = document.getElementById('matrixSection');
+      const btnRows = document.getElementById('viewBtnRows');
+      const btnMatrix = document.getElementById('viewBtnMatrix');
+
+      if (mode === 'rows') {
+        rowsSection.classList.remove('hidden');
+        matrixSection.classList.add('hidden');
+        btnRows.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
+        btnRows.classList.remove('text-slate-400');
+        btnMatrix.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
+        btnMatrix.classList.add('text-slate-400');
+        // Rebuild DOM rows from state
+        const list = document.getElementById('rows');
+        if (list) { list.innerHTML = ''; state.orderItems.forEach(i => appendRowToDom(i)); }
+      } else {
+        rowsSection.classList.add('hidden');
+        matrixSection.classList.remove('hidden');
+        btnMatrix.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
+        btnMatrix.classList.remove('text-slate-400');
+        btnRows.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
+        btnRows.classList.add('text-slate-400');
+        renderMatrix();
       }
     }
 
@@ -429,19 +610,30 @@
             <section class="space-y-3">
               <div class="flex items-center justify-between px-1">
                 <h3 class="font-black text-slate-800 text-sm tracking-tight uppercase">Состав заявки</h3>
-                <span id="selectedCount" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black">0 ПОЗ.</span>
+                <div class="flex items-center gap-2">
+                  <span id="selectedCount" class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black">0 ПОЗ.</span>
+                  <div class="flex bg-slate-100 rounded-xl p-0.5">
+                    <button id="viewBtnRows" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all bg-white shadow-sm text-slate-700">Строки</button>
+                    <button id="viewBtnMatrix" type="button" class="px-3 py-1 rounded-lg text-xs font-bold transition-all text-slate-400">Таблица</button>
+                  </div>
+                </div>
               </div>
 
-              <div id="rows" class="space-y-3"></div>
+              <div id="rowsSection">
+                <div id="rows" class="space-y-3"></div>
+                <button
+                  id="addRowBtn"
+                  class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed border-green-400 rounded-2xl text-green-600 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
+                  type="button"
+                  style="padding-top: 18px; padding-bottom: 18px;"
+                >
+                  ${iconSvg('plus', 18)} Добавить товар
+                </button>
+              </div>
 
-              <button
-                id="addRowBtn"
-                class="w-full flex items-center justify-center gap-2 py-4 bg-white border-2 border-dashed border-green-400 rounded-2xl text-green-600 font-bold text-sm hover:bg-white hover:border-green-400 hover:text-green-600 transition-all active:scale-[0.98] shadow-sm"
-                type="button"
-                style="padding-top: 18px; padding-bottom: 18px;"
-              >
-                ${iconSvg('plus', 18)} Добавить товар
-              </button>
+              <div id="matrixSection" class="hidden">
+                <div id="matrixContainer"></div>
+              </div>
             </section>
 
             <section class="space-y-1">
@@ -509,55 +701,50 @@
     // =========================
     function appendRowToDom(item) {
       const rows = document.getElementById('rows');
-
       const el = document.createElement('div');
       el.id = `row-${item.id}`;
       el.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3';
 
-      const optionsHtml = [
-        `<option value="" disabled hidden ${!item.productId ? 'selected' : ''}>Выберите товар...</option>`,
-        ...SORTED_PRODUCTS.map(pp => `<option value="${pp.id}" ${pp.id === item.productId ? 'selected' : ''}>${escapeHtml(pp.name)}</option>`)
-      ].join('');
+      const sp = item.productId ? productById(item.productId) : null;
 
       el.innerHTML = `
         <div class="flex justify-between items-start gap-2">
-          <div class="flex-1">
+          <div class="flex-1 min-w-0">
             <label class="text-[10px] text-slate-400 font-bold uppercase mb-1 block">Товар</label>
-            <div class="relative">
-              <select
-                class="w-full text-sm font-semibold border-none focus:ring-0 p-0 bg-transparent cursor-pointer appearance-none ${!item.productId ? 'text-slate-500' : 'text-slate-800'}"
-                data-row="product"
-              >
-                ${optionsHtml}
-              </select>
+            <button type="button" class="w-full text-left flex items-center justify-between gap-1 py-0.5" data-row="searchTrigger">
+              <span data-row="searchTriggerText" class="text-sm font-semibold leading-tight truncate ${sp ? 'text-slate-800' : 'text-slate-400'}">
+                ${sp ? escapeHtml(sp.name) : 'Выберите товар...'}
+              </span>
+              ${iconSvg('chevronDown', 14, 'text-slate-300 flex-shrink-0')}
+            </button>
+            <div data-row="searchDropdown" class="hidden mt-2 border border-slate-200 rounded-xl overflow-hidden shadow-lg bg-white">
+              <div class="p-2 bg-slate-50 border-b border-slate-100">
+                <input type="text" placeholder="Поиск товара..." autocomplete="off"
+                  class="w-full bg-white rounded-lg px-3 py-2 text-sm border border-slate-200 focus:outline-none focus:border-green-500"
+                  data-row="searchInput" />
+              </div>
+              <div data-row="searchList" class="max-h-52 overflow-y-auto divide-y divide-slate-50"></div>
             </div>
           </div>
-          <button
-            class="text-slate-300 hover:text-red-500 p-1 transition-colors"
-            type="button"
-            aria-label="Удалить строку"
-            data-row="remove"
-          >
+          <button class="text-slate-300 hover:text-red-500 p-1 mt-4 transition-colors flex-shrink-0" type="button" data-row="remove">
             ${iconSvg('trash', 18)}
           </button>
         </div>
 
-        <div class="grid grid-cols-3 gap-4 border-t border-slate-50 pt-3">
+        <div class="grid grid-cols-3 gap-3 border-t border-slate-50 pt-3">
           <div>
             <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Цена</label>
-            <div class="text-sm font-medium text-slate-500" data-row="price">—</div>
+            <div class="text-sm font-medium text-slate-500" data-row="price">${sp ? `${sp.price}₽/${sp.unit}` : '—'}</div>
           </div>
           <div>
             <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Кол-во</label>
-            <input
-              type="text"
-              inputmode="decimal"
-              placeholder="0"
-              class="w-full text-sm font-bold bg-slate-50 disabled:bg-slate-100 disabled:opacity-50 rounded-lg px-2 py-1 border border-slate-200 focus:outline-none focus:border-green-500"
-              data-row="qty"
-              disabled
-              value=""
-            />
+            <div class="flex items-center gap-1">
+              <button type="button" data-row="minus" class="w-7 h-7 rounded-md flex items-center justify-center font-bold text-base select-none transition-all ${sp ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 active:scale-95' : 'bg-slate-50 text-slate-300 pointer-events-none'}">−</button>
+              <input type="text" inputmode="${sp?.unit === 'кг' ? 'decimal' : 'numeric'}" placeholder="0" value="${item.qtyText || ''}"
+                class="w-full min-w-0 text-sm font-bold text-center rounded-md px-1 py-1 border focus:outline-none focus:border-green-500 transition-colors ${sp ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-50 border-slate-100 text-slate-300 pointer-events-none'}"
+                data-row="qty" ${!sp ? 'disabled' : ''} />
+              <button type="button" data-row="plus" class="w-7 h-7 rounded-md flex items-center justify-center font-bold text-base select-none transition-all ${sp ? 'bg-slate-100 hover:bg-slate-200 text-slate-600 active:scale-95' : 'bg-slate-50 text-slate-300 pointer-events-none'}">+</button>
+            </div>
           </div>
           <div class="text-right">
             <label class="text-[9px] text-slate-400 font-bold uppercase mb-1 block">Сумма</label>
@@ -568,61 +755,122 @@
 
       rows.appendChild(el);
 
-      const sel = el.querySelector('[data-row="product"]');
-      const btnRemove = el.querySelector('[data-row="remove"]');
-      const qtyInput = el.querySelector('[data-row="qty"]');
-      const priceBox = el.querySelector('[data-row="price"]');
+      const trigger     = el.querySelector('[data-row="searchTrigger"]');
+      const triggerText = el.querySelector('[data-row="searchTriggerText"]');
+      const dropdown    = el.querySelector('[data-row="searchDropdown"]');
+      const searchInput = el.querySelector('[data-row="searchInput"]');
+      const searchList  = el.querySelector('[data-row="searchList"]');
+      const btnRemove   = el.querySelector('[data-row="remove"]');
+      const qtyInput    = el.querySelector('[data-row="qty"]');
+      const btnMinus    = el.querySelector('[data-row="minus"]');
+      const btnPlus     = el.querySelector('[data-row="plus"]');
+      const priceBox    = el.querySelector('[data-row="price"]');
 
-      btnRemove.addEventListener('click', () => removeRow(item.id));
+      function fillList(query) {
+        const q = (query || '').toLowerCase().trim();
+        const list = q ? SORTED_PRODUCTS.filter(p => p.name.toLowerCase().includes(q)) : SORTED_PRODUCTS;
+        searchList.innerHTML = list.length
+          ? list.map(p => `
+              <div class="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-green-50 active:bg-green-100 cursor-pointer" data-pid="${p.id}">
+                <span class="text-sm text-slate-700 leading-tight">${escapeHtml(p.name)}</span>
+                <span class="text-xs text-slate-400 whitespace-nowrap">${p.price}₽/${p.unit}</span>
+              </div>`).join('')
+          : '<p class="text-sm text-slate-400 text-center py-4">Не найдено</p>';
+      }
 
-      sel.addEventListener('change', (e) => {
-        const productId = e.target.value;
-        const p = productById(productId);
+      function openDropdown() {
+        document.querySelectorAll('[data-row="searchDropdown"]').forEach(d => {
+          if (d !== dropdown) d.classList.add('hidden');
+        });
+        dropdown.classList.remove('hidden');
+        searchInput.value = '';
+        fillList('');
+        setTimeout(() => searchInput.focus(), 30);
+      }
 
+      function closeDropdown() { dropdown.classList.add('hidden'); }
+
+      function activateControls(p) {
+        qtyInput.disabled = false;
+        qtyInput.inputMode = p.unit === 'кг' ? 'decimal' : 'numeric';
+        qtyInput.classList.remove('border-slate-100', 'text-slate-300', 'pointer-events-none');
+        qtyInput.classList.add('border-slate-200', 'text-slate-800');
+        [btnMinus, btnPlus].forEach(b => {
+          b.classList.remove('bg-slate-50', 'text-slate-300', 'pointer-events-none');
+          b.classList.add('bg-slate-100', 'hover:bg-slate-200', 'text-slate-600', 'active:scale-95');
+        });
+      }
+
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.contains('hidden') ? openDropdown() : closeDropdown();
+      });
+      dropdown.addEventListener('click', (e) => e.stopPropagation());
+      searchInput.addEventListener('input', (e) => fillList(e.target.value));
+
+      searchList.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-pid]');
+        if (!target) return;
+        const pid = target.getAttribute('data-pid');
+        const p = productById(pid);
         const rowItem = state.orderItems.find(x => x.id === item.id);
-        if (!rowItem) return;
+        if (!p || !rowItem) return;
 
-        rowItem.productId = productId;
-        rowItem.quantity = p && p.unit === 'кг' ? 1.0 : 1;
+        rowItem.productId = pid;
+        rowItem.quantity = p.unit === 'кг' ? 1.0 : 1;
         rowItem.qtyText = String(rowItem.quantity);
 
-        qtyInput.disabled = false;
+        triggerText.textContent = p.name;
+        triggerText.classList.remove('text-slate-400');
+        triggerText.classList.add('text-slate-800');
         qtyInput.value = rowItem.qtyText;
-
-        priceBox.textContent = p ? `${p.price}₽ / ${p.unit}` : '—';
+        priceBox.textContent = `${p.price}₽/${p.unit}`;
+        activateControls(p);
+        closeDropdown();
         updateRowSum(item.id);
         updateFooterTotals();
         updateHeaderResetVisibility();
         updateSelectedCount();
-
-        sel.classList.remove('text-slate-500');
-        sel.classList.add('text-slate-800');
       });
+
+      btnRemove.addEventListener('click', () => removeRow(item.id));
+
+      function adjustQty(delta) {
+        const rowItem = state.orderItems.find(x => x.id === item.id);
+        if (!rowItem?.productId) return;
+        const p = productById(rowItem.productId);
+        if (!p) return;
+        const step = p.unit === 'кг' ? 0.5 : 1;
+        let next = Math.max(0, +(((parseFloat(rowItem.qtyText) || 0) + delta * step).toFixed(2)));
+        if (p.unit === 'шт') next = Math.round(next);
+        rowItem.quantity = next;
+        rowItem.qtyText = String(next);
+        qtyInput.value = rowItem.qtyText;
+        updateRowSum(item.id);
+        updateFooterTotals();
+        updateHeaderResetVisibility();
+      }
+
+      btnMinus.addEventListener('click', () => adjustQty(-1));
+      btnPlus.addEventListener('click', () => adjustQty(1));
 
       qtyInput.addEventListener('input', (e) => {
         const rowItem = state.orderItems.find(x => x.id === item.id);
         if (!rowItem) return;
-
         const p = productById(rowItem.productId);
         let valStr = String(e.target.value || '').replace(',', '.');
-
         if (valStr !== '' && !/^\d*\.?\d*$/.test(valStr)) {
           e.target.value = rowItem.qtyText || '';
           return;
         }
-
         rowItem.qtyText = valStr;
-
-        const parsed = parseFloat(valStr);
-        const num = (isNaN(parsed) ? 0 : parsed);
-        rowItem.quantity = (p && p.unit === 'шт') ? Math.floor(num) : num;
-
+        const num = isNaN(parseFloat(valStr)) ? 0 : parseFloat(valStr);
+        rowItem.quantity = p?.unit === 'шт' ? Math.floor(num) : num;
         updateRowSum(item.id);
         updateFooterTotals();
         updateHeaderResetVisibility();
       });
 
-      updateRowMeta(item.id);
       updateRowSum(item.id);
     }
 
@@ -735,17 +983,22 @@
       document.getElementById('addRowBtn').addEventListener('click', addRow);
       document.getElementById('copyBtn').addEventListener('click', handleCopy);
       document.getElementById('resetBtn').addEventListener('click', handleReset);
+      document.getElementById('viewBtnRows').addEventListener('click', () => switchViewMode('rows'));
+      document.getElementById('viewBtnMatrix').addEventListener('click', () => switchViewMode('matrix'));
 
       const sendBtn = document.getElementById('sendBtn');
       const menu = document.getElementById('sendMenu');
 
-      sendBtn.addEventListener('click', () => {
+      sendBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         menu.classList.toggle('hidden');
       });
 
       document.addEventListener('click', (e) => {
-        const isInside = sendBtn.contains(e.target) || menu.contains(e.target);
-        if (!isInside) menu.classList.add('hidden');
+        // Close send menu
+        if (!sendBtn.contains(e.target) && !menu.contains(e.target)) menu.classList.add('hidden');
+        // Close search dropdowns
+        document.querySelectorAll('[data-row="searchDropdown"]').forEach(d => d.classList.add('hidden'));
       });
 
       menu.querySelectorAll('[data-send]').forEach(btn => {
