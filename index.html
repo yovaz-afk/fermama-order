@@ -612,7 +612,7 @@
       _sendText = text;
       const encoded = encodeURIComponent(text);
       const tgBtn = document.getElementById('sendTgBtn');
-      if (tgBtn) tgBtn.href = `https://t.me/share/url?url=&text=${encoded}`;
+      if (tgBtn) tgBtn.href = `tg://msg?text=${encoded}`;
       document.getElementById('sendOverlay').classList.add('open');
       document.getElementById('sendPopup').classList.add('open');
     }
@@ -634,11 +634,8 @@
 
     function sendViaMax() {
       closeSendSheet();
-      navigator.clipboard.writeText(_sendText).then(() => {
-        setStatus('success', 'Текст скопирован — вставьте в Max');
-      }).catch(() => {
-        setStatus('error', 'Не удалось скопировать');
-      });
+      const encoded = encodeURIComponent(_sendText);
+      window.open(`https://vk.me/write?text=${encoded}`, '_blank');
     }
 
     function sendViaCopy() {
