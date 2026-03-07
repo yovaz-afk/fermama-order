@@ -533,7 +533,6 @@
 <div class="top-bar" id="topBar">
   <button class="top-btn btn-share" onclick="toggleShare(event)">↗ Поделиться</button>
   <button class="top-btn btn-pdf" onclick="downloadPDF()">⬇ Скачать PDF</button>
-  <button class="top-btn" onclick="openPriceAdmin()" style="background:white;color:#5a7a2e;border:1.5px solid #d4e8b0" title="Обновить цены">⚙</button>
 </div>
 
 <div class="share-overlay" id="shareOverlay" onclick="closeSharePopup()"></div>
@@ -576,7 +575,7 @@
 
   <!-- ШАПКА -->
   <div class="header">
-    <img src="logo.jpg" class="header-logo" alt="ФерМама"/>
+    <img src="logo.jpg" class="header-logo" alt="ФерМама" id="logoTap" onclick="handleLogoTap()" style="cursor:pointer;user-select:none"/>
     <div class="header-text">
       <div class="header-company">ООО «ФерМама Про»</div>
       <div class="header-title">Оптовый прайс-лист</div>
@@ -955,6 +954,19 @@
       if (!isNaN(price) && price > 0) results.push({ name, price });
     }
     return results;
+  }
+
+  // Секретный вход: 5 тапов по логотипу
+  let _logoTaps = 0, _logoTimer = null;
+  function handleLogoTap() {
+    _logoTaps++;
+    clearTimeout(_logoTimer);
+    if (_logoTaps >= 5) {
+      _logoTaps = 0;
+      openPriceAdmin();
+    } else {
+      _logoTimer = setTimeout(() => { _logoTaps = 0; }, 2000);
+    }
   }
 
   function openPriceAdmin() {
