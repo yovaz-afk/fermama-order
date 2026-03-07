@@ -57,6 +57,46 @@
     .btn-share { background: white; color: var(--green-dark); }
     .btn-share:hover { background: #f5f5f5; }
 
+    /* Admin panel */
+    .admin-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 400;
+      align-items: flex-end;
+    }
+    .admin-overlay.open { display: flex; }
+    .admin-panel {
+      width: 100%; max-width: 640px; margin: 0 auto;
+      background: #fff; border-radius: 24px 24px 0 0;
+      padding: 8px 20px 36px; max-height: 88vh; overflow-y: auto;
+    }
+    .admin-handle { width: 40px; height: 4px; background: #e2e8f0; border-radius: 99px; margin: 8px auto 16px; }
+    .admin-title { font-size: 15px; font-weight: 800; color: #1e293b; text-align: center; margin-bottom: 8px; }
+    .admin-hint { font-size: 13px; line-height: 1.5; color: #64748b; margin-bottom: 10px; }
+    .admin-csv {
+      width: 100%; min-height: 130px;
+      border: 1.5px solid #e2e8f0; border-radius: 12px;
+      padding: 10px 12px; font-size: 12px; font-family: monospace;
+      resize: vertical; outline: none;
+    }
+    .admin-csv:focus { border-color: #6BBF23; }
+    .admin-result {
+      white-space: pre-wrap; font-size: 13px; color: #334155;
+      margin-top: 12px; padding: 10px 12px;
+      background: #f8fafc; border-radius: 10px; display: none;
+    }
+    .admin-btn-apply {
+      flex: 1; padding: 12px; border-radius: 16px; font-weight: 700;
+      background: #6BBF23; color: white; font-size: 14px; border: none; cursor: pointer;
+    }
+    .admin-btn-reset {
+      padding: 12px 18px; border-radius: 16px; font-weight: 700;
+      background: #fff3f3; color: #ef4444; font-size: 14px; border: none; cursor: pointer;
+    }
+    .admin-btn-cancel {
+      padding: 12px 18px; border-radius: 16px; font-weight: 700;
+      background: #f1f5f9; color: #64748b; font-size: 14px; border: none; cursor: pointer;
+    }
+
     /* Share popup / bottom sheet */
     .share-overlay {
       display: none;
@@ -443,7 +483,7 @@
       body { background: white; width: 210mm; }
 
       .page-wrapper { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; width: 100%; }
-      .top-bar, .share-popup, .share-overlay { display: none !important; }
+      .top-bar, .share-popup, .share-overlay, .admin-overlay { display: none !important; }
       .category-block { page-break-inside: avoid; }
 
       /* Хедер */
@@ -493,6 +533,7 @@
 <div class="top-bar" id="topBar">
   <button class="top-btn btn-share" onclick="toggleShare(event)">↗ Поделиться</button>
   <button class="top-btn btn-pdf" onclick="downloadPDF()">⬇ Скачать PDF</button>
+  <button class="top-btn" onclick="openPriceAdmin()" style="background:white;color:#5a7a2e;border:1.5px solid #d4e8b0" title="Обновить цены">⚙</button>
 </div>
 
 <div class="share-overlay" id="shareOverlay" onclick="closeSharePopup()"></div>
@@ -582,6 +623,23 @@
     <div id="productsContainer"></div>
   </div>
 
+  <!-- Admin panel -->
+  <div class="admin-overlay" id="adminOverlay" onclick="if(event.target===this)closePriceAdmin()">
+    <div class="admin-panel">
+      <div class="admin-handle"></div>
+      <div class="admin-title">⚙ Обновление цен</div>
+      <p class="admin-hint">Скопируйте из Excel <strong>два столбца</strong>: «Название товара» и «Цена» (Tab-разделитель), вставьте ниже и нажмите «Применить». Страница обновится автоматически.</p>
+      <textarea class="admin-csv" id="adminCsvInput"
+        placeholder="Вареники с картошкой 450 гр ФерМама&#9;145&#10;Котлеты Домашние 500 гр ФерМама&#9;265"></textarea>
+      <div id="adminResult" class="admin-result"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="admin-btn-apply" onclick="applyPriceAdmin()">Применить</button>
+        <button class="admin-btn-reset" onclick="resetPriceAdmin()">Сбросить</button>
+        <button class="admin-btn-cancel" onclick="closePriceAdmin()">Отмена</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ФУТЕР -->
   <div class="footer">
     <div class="footer-top">
@@ -591,7 +649,7 @@
       </div>
       <div class="footer-block">
         <div class="footer-label">Телефон</div>
-        <div class="footer-value">8 (927) 883-01-69</div>
+        <div class="footer-value"><a href="tel:+79278830169">8 (927) 883-01-69</a></div>
       </div>
       <div class="footer-block">
         <div class="footer-label">Telegram</div>
@@ -600,30 +658,20 @@
         </div>
       </div>
     </div>
-    <div class="footer-manager-line">
-      Менеджер:&nbsp;<span>&nbsp;</span>&nbsp;&nbsp;&nbsp;&nbsp; Тел.:&nbsp;<span>&nbsp;</span>
-    </div>
   </div>
 
 </div>
 
 <script>
-  // Хиты продаж
-  const HITS = [
-    { name: 'Пельмени Домашние 900 гр',       price: 358, unit: 'шт' },
-    { name: 'Котлеты Пожарские 500 гр',        price: 230, unit: 'шт' },
-    { name: 'Наггетсы Фирменные 500 гр',       price: 255, unit: 'шт' },
-    { name: 'Котлеты По-киевски 500 гр',       price: 240, unit: 'шт' },
-    { name: 'Пельмени Свинина-Курица 900 гр',  price: 320, unit: 'шт' },
-    { name: 'Колбаски куриные из филе грудки вес.', price: 416, unit: 'кг' },
+  // Имена хитов — цены подтягиваются из PRODUCTS ниже
+  const HIT_NAMES = [
+    'Пельмени Домашние 900 гр',
+    'Котлеты Пожарские 500 гр',
+    'Наггетсы Фирменные 500 гр',
+    'Котлеты По-киевски 500 гр',
+    'Пельмени Свинина-Курица 900 гр',
+    'Колбаски куриные из филе грудки вес.',
   ];
-  document.getElementById('hitsGrid').innerHTML = HITS.map(h => `
-    <div class="hit-card">
-      <div class="hit-card-name">${h.name}</div>
-      <div class="hit-card-price">${h.price.toLocaleString('ru')} ₽</div>
-      <div class="hit-card-unit">за ${h.unit}</div>
-    </div>
-  `).join('');
 
   // Дата
   const now = new Date();
@@ -670,7 +718,6 @@
     document.getElementById('shareOverlay').classList.remove('open');
   }
   document.getElementById('sharePopup').addEventListener('click', e => e.stopPropagation());
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSharePopup(); });
 
   // Мессенджеры
   function shareTelegram(e) {
@@ -768,6 +815,62 @@
     { name: 'Фарш Свиной вес.',                  cat: 'Фарш', unit: 'кг', price: 395 },
   ];
 
+  // Применить сохранённые цены + новые позиции из localStorage
+  (function() {
+    try {
+      const idMap = {};
+      PRODUCTS.forEach(p => { idMap[p.id] = p; });
+
+      const saved = JSON.parse(localStorage.getItem('fermama_prices') || '{}');
+      Object.entries(saved).forEach(([id, price]) => {
+        if (idMap[id]) idMap[id].price = price;
+      });
+
+      // Новые позиции
+      const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
+      const existingIds = new Set(PRODUCTS.map(p => p.id));
+      newProds.forEach(p => {
+        if (!existingIds.has(p.id)) {
+          const cat = guessCat(p.name);
+          PRODUCTS.push({ ...p, cat });
+        }
+      });
+    } catch(e) {}
+  })();
+
+  function guessCat(name) {
+    const n = name.toLowerCase();
+    if (n.includes('вареник')) return 'Вареники';
+    if (n.includes('голубц')) return 'Голубцы';
+    if (n.includes('зраз')) return 'Зразы';
+    if (n.includes('котлет')) return 'Котлеты';
+    if (n.includes('мант')) return 'Манты';
+    if (n.includes('наггетс')) return 'Наггетсы';
+    if (n.includes('пельмен')) return 'Пельмени';
+    if (n.includes('подкогол')) return 'Подкоголи';
+    if (n.includes('равиол')) return 'Равиоли';
+    if (n.includes('фрикадел')) return 'Фрикадельки';
+    if (n.includes('чебурек')) return 'Чебуреки';
+    if (n.includes('сырник')) return 'Сырники';
+    if (n.includes('колбас')) return 'Колбаски';
+    if (n.includes('фарш')) return 'Фарш';
+    if (n.includes('тесто')) return 'Тесто';
+    return 'Прочее';
+  }
+
+  // Рендер хитов из PRODUCTS (цены синхронизированы)
+  document.getElementById('hitsGrid').innerHTML = HIT_NAMES
+    .map(n => PRODUCTS.find(p => p.name === n))
+    .filter(Boolean)
+    .map(h => `
+      <div class="hit-card">
+        <div class="hit-card-name">${h.name}</div>
+        <div class="hit-card-price">${h.price.toLocaleString('ru')} ₽</div>
+        <div class="hit-card-unit">за ${h.unit}</div>
+      </div>`)
+    .join('');
+
+
   const AWARD_WINNERS = new Set([
     'Пельмени Домашние 450 гр',
     'Пельмени Домашние 900 гр',
@@ -816,6 +919,127 @@
     `;
     container.appendChild(block);
   });
+
+  // =========================
+  // ПАНЕЛЬ ОБНОВЛЕНИЯ ЦЕН
+  // =========================
+  function normPriceName(s) {
+    return s.toLowerCase().replace(/\s*фермама\s*/gi, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function parsePriceCsvAdmin(text) {
+    const results = [];
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      const parts = line.split('\t').map(s => s.trim()).filter(Boolean);
+      if (parts.length < 2) continue;
+      let name, priceStr;
+      if (/^\d+$/.test(parts[0])) {
+        name = parts[1]; priceStr = parts[2];
+      } else {
+        name = parts[0]; priceStr = parts[parts.length - 1];
+      }
+      if (!name || !priceStr) continue;
+      const price = parseInt(String(priceStr).replace(/[^\d]/g, ''));
+      if (!isNaN(price) && price > 0) results.push({ name, price });
+    }
+    return results;
+  }
+
+  function openPriceAdmin() {
+    document.getElementById('adminOverlay').classList.add('open');
+    const res = document.getElementById('adminResult');
+    res.style.display = 'none'; res.textContent = '';
+    document.getElementById('adminCsvInput').value = '';
+  }
+
+  function closePriceAdmin() {
+    document.getElementById('adminOverlay').classList.remove('open');
+  }
+
+  function applyPriceAdmin() {
+    const text = document.getElementById('adminCsvInput').value;
+    const pairs = parsePriceCsvAdmin(text);
+    const res = document.getElementById('adminResult');
+    res.style.display = 'block';
+    if (!pairs.length) { res.textContent = '⚠️ Данные не распознаны. Скопируйте два столбца из Excel.'; return; }
+
+    const nameMap = {};
+    PRODUCTS.forEach(p => { nameMap[normPriceName(p.name)] = p; });
+
+    const overrides = JSON.parse(localStorage.getItem('fermama_prices') || '{}');
+    const matched = [], skipped = [];
+
+    function getBasePriceName(name) {
+      return name.replace(/\s*(?:\d+\s*(?:гр|г)|вес\.)\s*$/i, '').trim();
+    }
+
+    // bulkCalc: baseName → { bulkPrice, weightG } — берём наибольшую пачку
+    const bulkCalc = new Map();
+
+    pairs.forEach(({ name, price }) => {
+      const p = nameMap[normPriceName(name)];
+      if (p) {
+        overrides[p.id] = price;
+        matched.push(name);
+
+        if (p.unit === 'шт') {
+          const m = p.name.match(/(\d+)\s*(?:гр|г)/i);
+          if (m) {
+            const weightG = parseInt(m[1]);
+            const base = getBasePriceName(p.name);
+            const existing = bulkCalc.get(base);
+            if (!existing || weightG > existing.weightG) {
+              bulkCalc.set(base, { bulkPrice: Math.round(price / (weightG / 1000)), weightG });
+            }
+          }
+        }
+      } else {
+        skipped.push({ name, price });
+      }
+    });
+
+    // Применить авторасчитанные весовые цены
+    bulkCalc.forEach(({ bulkPrice, weightG }, base) => {
+      const bulk = PRODUCTS.find(b => b.unit === 'кг' && getBasePriceName(b.name) === base);
+      if (bulk) {
+        overrides[bulk.id] = bulkPrice;
+        matched.push(`${bulk.name} → ${bulkPrice} ₽/кг (авто по ${weightG}г)`);
+      }
+    });
+
+    // Добавить новые позиции которых не было в каталоге
+    const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
+    skipped.forEach(({ name, price }) => {
+      const cleanName = name.replace(/\s*ФерМама\s*/gi, '').trim();
+      const unit = /вес\./i.test(cleanName) ? 'кг' : 'шт';
+      const norm = normPriceName(cleanName);
+      const existing = newProds.find(p => normPriceName(p.name) === norm);
+      if (existing) {
+        existing.price = price;
+        overrides[existing.id] = price;
+        matched.push(`${cleanName} → ${price} ₽ (обновлено)`);
+      } else {
+        const id = 'np_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        newProds.push({ id, name: cleanName, unit, price });
+        overrides[id] = price;
+        matched.push(`${cleanName} → ${price} ₽ (добавлено)`);
+      }
+    });
+    localStorage.setItem('fermama_new_products', JSON.stringify(newProds));
+    localStorage.setItem('fermama_prices', JSON.stringify(overrides));
+
+    res.textContent = `✅ Применено: ${matched.length} позиций. Страница перезагрузится...`;
+    setTimeout(() => location.reload(), 1800);
+  }
+
+  function resetPriceAdmin() {
+    localStorage.removeItem('fermama_prices');
+    localStorage.removeItem('fermama_new_products');
+    location.reload();
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePriceAdmin(); closeSharePopup(); } });
 </script>
 </body>
 </html>

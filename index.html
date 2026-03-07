@@ -27,6 +27,81 @@
     .btn-grad { background: var(--grad) !important; box-shadow: var(--shadow-btn) !important; }
     .btn-grad:active { transform: scale(0.97); }
     .text-grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+    /* ---- Admin panel: обновление цен ---- */
+    .admin-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 200;
+      align-items: flex-end;
+    }
+    .admin-overlay.open { display: flex; }
+    .admin-panel {
+      width: 100%; max-width: 512px; margin: 0 auto;
+      background: #fff; border-radius: 24px 24px 0 0;
+      padding: 8px 20px 36px; max-height: 88vh; overflow-y: auto;
+    }
+    .admin-hint { font-size: 13px; line-height: 1.5; color: #64748b; margin-bottom: 10px; }
+    .admin-csv {
+      width: 100%; min-height: 130px;
+      border: 1.5px solid #e2e8f0; border-radius: 12px;
+      padding: 10px 12px; font-size: 12px; font-family: monospace;
+      resize: vertical; outline: none;
+    }
+    .admin-csv:focus { border-color: var(--primary); }
+    .admin-result {
+      white-space: pre-wrap; font-size: 13px; color: #334155;
+      margin-top: 12px; padding: 10px 12px;
+      background: #f8fafc; border-radius: 10px; display: none;
+    }
+    .admin-has-overrides { color: var(--accent); font-size: 10px; font-weight: 700; }
+
+    /* ---- Bottom sheet "Отправить" ---- */
+    .send-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      backdrop-filter: blur(2px);
+    }
+    .send-overlay.open { display: block; }
+    .send-popup {
+      position: fixed; left: 0; right: 0; bottom: -100%;
+      max-width: 512px; margin: 0 auto;
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 8px 16px 32px;
+      z-index: 101;
+      transition: bottom 0.28s cubic-bezier(0.34,1.2,0.64,1);
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+    }
+    .send-popup.open { bottom: 0; }
+    .send-popup-handle {
+      width: 40px; height: 4px;
+      background: #e2e8f0;
+      border-radius: 99px;
+      margin: 8px auto 16px;
+    }
+    .send-popup-title {
+      font-size: 13px; font-weight: 800;
+      color: #94a3b8; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center; margin-bottom: 16px;
+    }
+    .send-option {
+      display: flex; align-items: center; gap: 14px;
+      width: 100%; padding: 14px 16px;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 16px; font-weight: 600;
+      color: #1e293b; text-decoration: none;
+      border-radius: 16px;
+      transition: background 0.15s;
+    }
+    .send-option:hover, .send-option:active { background: #f8fafc; }
+    .so-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 
@@ -129,6 +204,22 @@
       return 0;
     });
 
+    // Применить сохранённые цены + новые позиции из localStorage
+    (function() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('fermama_prices') || '{}');
+        PRODUCTS.forEach(p => { if (saved[p.id] != null) p.price = saved[p.id]; });
+        const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
+        const existingIds = new Set(PRODUCTS.map(p => p.id));
+        newProds.forEach(p => {
+          if (!existingIds.has(p.id)) {
+            PRODUCTS.push(p);
+            SORTED_PRODUCTS.push(p);
+          }
+        });
+      } catch(e) {}
+    })();
+
     // =========================
     // ИКОНКИ (SVG)
     // =========================
@@ -169,6 +260,8 @@
           return `<svg ${common}><path ${stroke} d="M20 12a8 8 0 1 1-3.2-6.4"/><path ${stroke} d="M8.5 9.5c1.2 2.3 3.7 4.6 6 5.2"/><path ${stroke} d="M15.5 15.5l-1.7.7a1 1 0 0 1-1-.2l-1.2-.9"/><path ${stroke} d="M9 8.7l.7-1.7a1 1 0 0 1 .8-.6h.3"/></svg>`;
         case 'vb':
           return `<svg ${common}><path ${stroke} d="M21 11.5c0 5-4.4 9-9.8 9-1.2 0-2.4-.2-3.5-.6L3 21l1.3-4.2c-.5-1-.8-2.1-.8-3.3 0-5 4.4-9 9.8-9S21 6.5 21 11.5z"/></svg>`;
+        case 'settings':
+          return `<svg ${common}><circle ${stroke} cx="12" cy="12" r="3"/><path ${stroke} d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`;
         default:
           return '';
       }
@@ -249,7 +342,7 @@
         text += `\nКомментарий: ${String(state.orderComment).trim()}\n`;
       }
 
-      text += `\nИтого: ${formatRuMoney(totalSum())} ₽`;
+      text += `\n──────────────────\nИтого: ${formatRuMoney(totalSum())} ₽`;
       return text;
     }
 
@@ -296,18 +389,7 @@
       const text = generateMessageText(kind);
 
       if (kind === 'share') {
-        if (navigator.share) {
-          navigator.share({ text }).catch(() => {
-            // пользователь закрыл шторку — ничего не делаем
-          });
-        } else {
-          // нет Web Share API (десктоп) — копируем в буфер
-          navigator.clipboard.writeText(text).then(() => {
-            setStatus('success', 'Текст скопирован — вставьте в нужный мессенджер');
-          }).catch(() => {
-            setStatus('error', 'Поделиться недоступно — скопируйте текст кнопкой слева');
-          });
-        }
+        openSendSheet(text);
         return;
       }
 
@@ -328,6 +410,184 @@
         window.open(`viber://forward?text=${encoded}`, '_blank');
         return;
       }
+    }
+
+    // =========================
+    // ПАНЕЛЬ ОБНОВЛЕНИЯ ЦЕН
+    // =========================
+    function normalizePriceName(s) {
+      return s.toLowerCase()
+        .replace(/\s*фермама\s*/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function parsePriceCsv(text) {
+      const results = [];
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        const parts = line.split('\t').map(s => s.trim()).filter(Boolean);
+        if (parts.length < 2) continue;
+        let name, priceStr;
+        if (/^\d+$/.test(parts[0])) {
+          // Формат: "1\tНазвание\t145" (скопировали с номером строки)
+          name = parts[1]; priceStr = parts[2];
+        } else {
+          name = parts[0]; priceStr = parts[parts.length - 1];
+        }
+        if (!name || !priceStr) continue;
+        const price = parseInt(String(priceStr).replace(/[^\d]/g, ''));
+        if (!isNaN(price) && price > 0) results.push({ name, price });
+      }
+      return results;
+    }
+
+    function openAdmin() {
+      document.getElementById('adminOverlay').classList.add('open');
+      const res = document.getElementById('adminResult');
+      res.style.display = 'none'; res.textContent = '';
+      document.getElementById('adminCsvInput').value = '';
+    }
+
+    function closeAdmin() {
+      document.getElementById('adminOverlay').classList.remove('open');
+    }
+
+    function applyPricesCsv() {
+      const text = document.getElementById('adminCsvInput').value;
+      const pairs = parsePriceCsv(text);
+      const res = document.getElementById('adminResult');
+      res.style.display = 'block';
+      if (!pairs.length) { res.textContent = '⚠️ Данные не распознаны. Скопируйте два столбца из Excel.'; return; }
+
+      // Строим карту: normName → product
+      const nameMap = {};
+      PRODUCTS.forEach(p => { nameMap[normalizePriceName(p.name)] = p; });
+
+      const overrides = JSON.parse(localStorage.getItem('fermama_prices') || '{}');
+      const matched = [], skipped = [];
+
+      // bulkCalc: baseName → { bulkPrice, weightG } — берём наибольшую пачку
+      const bulkCalc = new Map();
+
+      pairs.forEach(({ name, price }) => {
+        const p = nameMap[normalizePriceName(name)];
+        if (p) {
+          overrides[p.id] = price;
+          p.price = price;
+          matched.push(`${p.name} → ${price} ₽`);
+
+          if (p.unit === 'шт') {
+            const m = p.name.match(/(\d+)\s*(?:гр|г)/i);
+            if (m) {
+              const weightG = parseInt(m[1]);
+              const base = getBaseName(p.name);
+              const existing = bulkCalc.get(base);
+              if (!existing || weightG > existing.weightG) {
+                bulkCalc.set(base, { bulkPrice: Math.round(price / (weightG / 1000)), weightG });
+              }
+            }
+          }
+        } else {
+          skipped.push({ name, price });
+        }
+      });
+
+      // Применить авторасчитанные весовые цены
+      bulkCalc.forEach(({ bulkPrice, weightG }, base) => {
+        const bulk = PRODUCTS.find(b => b.unit === 'кг' && getBaseName(b.name) === base);
+        if (bulk) {
+          overrides[bulk.id] = bulkPrice;
+          bulk.price = bulkPrice;
+          matched.push(`${bulk.name} → ${bulkPrice} ₽/кг (авто по ${weightG}г)`);
+        }
+      });
+
+      // Добавить новые позиции которых не было в каталоге
+      const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
+      const newProdNorms = new Set(newProds.map(p => normalizePriceName(p.name)));
+      skipped.forEach(({ name, price }) => {
+        const cleanName = name.replace(/\s*ФерМама\s*/gi, '').trim();
+        const unit = /вес\./i.test(cleanName) ? 'кг' : 'шт';
+        const id = 'np_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        const norm = normalizePriceName(cleanName);
+        const existing = newProds.find(p => normalizePriceName(p.name) === norm);
+        if (existing) {
+          existing.price = price;
+          overrides[existing.id] = price;
+          matched.push(`${cleanName} → ${price} ₽ (обновлено)`);
+        } else {
+          const np = { id, name: cleanName, unit, price };
+          newProds.push(np);
+          PRODUCTS.push(np);
+          SORTED_PRODUCTS.push(np);
+          overrides[id] = price;
+          matched.push(`${cleanName} → ${price} ₽ (добавлено)`);
+        }
+      });
+      localStorage.setItem('fermama_new_products', JSON.stringify(newProds));
+
+      localStorage.setItem('fermama_prices', JSON.stringify(overrides));
+
+      // Обновить отображение уже добавленных строк
+      state.orderItems.forEach(item => {
+        if (!item.productId) return;
+        const p = productById(item.productId);
+        if (!p) return;
+        const el = document.getElementById(`row-${item.id}`);
+        if (!el) return;
+        const priceBox = el.querySelector('[data-row="price"]');
+        if (priceBox) priceBox.textContent = `${p.price}₽/${p.unit}`;
+      });
+      updateFooterTotals();
+
+      res.textContent = `✅ Применено: ${matched.length} позиций`;
+      setTimeout(() => closeAdmin(), 2000);
+    }
+
+    function resetAllPrices() {
+      localStorage.removeItem('fermama_prices');
+      localStorage.removeItem('fermama_new_products');
+      location.reload();
+    }
+
+    // =========================
+    // ШТОРКА ОТПРАВКИ
+    // =========================
+    let _sendText = '';
+
+    function openSendSheet(text) {
+      _sendText = text;
+      const appUrl = encodeURIComponent(window.location.href);
+      const encoded = encodeURIComponent(text);
+      const tgBtn = document.getElementById('sendTgBtn');
+      if (tgBtn) tgBtn.href = `https://t.me/share/url?url=${appUrl}&text=${encoded}`;
+      document.getElementById('sendOverlay').classList.add('open');
+      document.getElementById('sendPopup').classList.add('open');
+    }
+
+    function closeSendSheet() {
+      document.getElementById('sendOverlay').classList.remove('open');
+      document.getElementById('sendPopup').classList.remove('open');
+    }
+
+    function sendViaTelegram(e) {
+      closeSendSheet();
+    }
+
+    function sendViaWhatsApp() {
+      closeSendSheet();
+      const encoded = encodeURIComponent(_sendText);
+      window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    }
+
+    function sendViaCopy() {
+      closeSendSheet();
+      navigator.clipboard.writeText(_sendText).then(() => {
+        setStatus('success', 'Текст скопирован — вставьте в нужный мессенджер');
+      }).catch(() => {
+        setStatus('error', 'Не удалось скопировать — попробуйте вручную');
+      });
     }
 
     // =========================
@@ -579,14 +839,19 @@
           <header class="bg-white sticky top-0 z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-2">
               <img src="logo.jpg" class="w-9 h-9 rounded-lg object-cover" alt="ФерМама"/>
-              <h1 class="font-bold tracking-tight text-lg text-grad">Заявки ФерМама</h1>
+              <h1 class="font-bold tracking-tight text-lg text-grad whitespace-nowrap">Заявки ФерМама</h1>
             </div>
             <div class="flex items-center gap-2">
+              <button id="adminBtn" onclick="openAdmin()" type="button"
+                class="text-slate-300 hover:text-slate-500 transition-colors p-1 relative" title="Обновить цены">
+                ${iconSvg('settings', 18)}
+                ${Object.keys(JSON.parse(localStorage.getItem('fermama_prices')||'{}')).length > 0 ? '<span class="absolute top-0 right-0 w-2 h-2 bg-amber-400 rounded-full"></span>' : ''}
+              </button>
               <a href="price-preview.html" target="_blank"
                 class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl btn-grad transition-all whitespace-nowrap">
                 📄 Прайс
               </a>
-              <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-red-500 transition-colors" type="button">
+              <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-red-400 hover:text-red-600 transition-colors" type="button">
                 ${iconSvg('rotateCcw', 14)} Очистить
               </button>
             </div>
@@ -711,6 +976,51 @@
               </div>
             </div>
           </footer>
+        </div>
+
+        <!-- Admin panel: обновление цен -->
+        <div class="admin-overlay" id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
+          <div class="admin-panel">
+            <div class="send-popup-handle"></div>
+            <div class="send-popup-title">Обновление цен</div>
+            <p class="admin-hint">Скопируйте из Excel <strong>два столбца</strong>: «Название товара» и «Цена» (Tab-разделитель), вставьте ниже и нажмите «Применить».</p>
+            <textarea class="admin-csv" id="adminCsvInput"
+              placeholder="Вареники с картошкой 450 гр ФерМама&#9;145&#10;Котлеты Домашние 500 гр ФерМама&#9;265"></textarea>
+            <div id="adminResult" class="admin-result"></div>
+            <div class="flex gap-2 mt-4">
+              <button onclick="applyPricesCsv()" type="button"
+                class="flex-1 py-3 rounded-2xl font-bold text-white text-sm btn-grad">Применить</button>
+              <button onclick="resetAllPrices()" type="button"
+                class="py-3 px-4 rounded-2xl font-bold text-sm" style="background:#fff3f3;color:#ef4444">Сбросить</button>
+              <button onclick="closeAdmin()" type="button"
+                class="py-3 px-4 rounded-2xl font-bold text-sm" style="background:#f1f5f9;color:#64748b">Отмена</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom sheet: выбор мессенджера -->
+        <div class="send-overlay" id="sendOverlay" onclick="closeSendSheet()"></div>
+        <div class="send-popup" id="sendPopup">
+          <div class="send-popup-handle"></div>
+          <div class="send-popup-title">Отправить заявку</div>
+          <a class="send-option" id="sendTgBtn" href="#" onclick="sendViaTelegram(event)">
+            <span class="so-icon" style="background:#2CA5E0">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.93 6.836-1.68 7.92c-.126.56-.456.698-.924.434l-2.556-1.882-1.233 1.187c-.136.136-.25.25-.513.25l.183-2.594 4.72-4.263c.205-.183-.045-.284-.318-.101L8.434 14.46l-2.513-.784c-.546-.171-.558-.546.114-.808l9.78-3.77c.455-.164.854.102.715.738l-.6-.001z" fill="white"/></svg>
+            </span>
+            Telegram
+          </a>
+          <button class="send-option" onclick="sendViaWhatsApp()">
+            <span class="so-icon" style="background:#25D366">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12.001 2c-5.523 0-9.999 4.477-9.999 10 0 1.762.459 3.417 1.265 4.855L2 22l5.29-1.24A9.953 9.953 0 0 0 12.001 22c5.522 0 9.999-4.477 9.999-10S17.523 2 12.001 2zm5.192 14.196c-.22.616-1.283 1.177-1.763 1.25-.48.072-.964.103-3.085-.644-2.59-.92-4.26-3.563-4.39-3.727-.13-.164-1.056-1.404-1.056-2.68s.668-1.895.905-2.154a.957.957 0 0 1 .692-.325c.173 0 .346.003.498.01.16.007.375-.061.586.447.22.525.746 1.82.812 1.952.065.13.108.282.021.453-.086.17-.13.277-.259.427-.13.15-.272.335-.389.45-.13.13-.265.27-.114.53.151.26.672 1.107 1.443 1.793.991.884 1.827 1.158 2.09 1.288.26.13.41.108.56-.065.15-.173.643-.75.815-1.008.172-.26.344-.216.58-.13s1.502.71 1.76.838c.26.13.432.195.496.303.065.108.065.625-.155 1.24z" fill="white"/></svg>
+            </span>
+            WhatsApp
+          </button>
+          <button class="send-option" onclick="sendViaCopy()">
+            <span class="so-icon" style="background:#5C9E31">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="white" stroke-width="2" fill="none"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            Скопировать текст
+          </button>
         </div>
       `;
 
@@ -1019,6 +1329,10 @@
       document.addEventListener('click', () => {
         // Close search dropdowns
         document.querySelectorAll('[data-row="searchDropdown"]').forEach(d => d.classList.add('hidden'));
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSendSheet();
       });
     }
 
