@@ -634,8 +634,11 @@
 
     function sendViaMax() {
       closeSendSheet();
-      const encoded = encodeURIComponent(_sendText);
-      window.open(`https://max.ru/share?text=${encoded}`, '_blank');
+      navigator.clipboard.writeText(_sendText).then(() => {
+        setStatus('success', 'Текст скопирован — вставьте в Max');
+      }).catch(() => {
+        setStatus('error', 'Не удалось скопировать');
+      });
     }
 
     function sendViaCopy() {
@@ -1360,6 +1363,8 @@
     // =========================
     function bindStaticEvents() {
       const managerSelect = document.getElementById('managerSelect');
+      // Читаем текущее значение сразу — на случай если браузер восстановил форму из кэша
+      if (managerSelect.value) state.selectedManager = managerSelect.value;
       managerSelect.addEventListener('change', (e) => {
         state.selectedManager = e.target.value;
       });

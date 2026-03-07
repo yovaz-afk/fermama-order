@@ -738,9 +738,12 @@
     closeSharePopup();
   }
   function shareMax() {
-    const url = encodeURIComponent(window.location.href);
-    window.open(`https://max.ru/share?url=${url}`, '_blank');
     closeSharePopup();
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      alert('Ссылка скопирована — вставьте в Max');
+    }).catch(() => {
+      prompt('Скопируйте ссылку:', window.location.href);
+    });
   }
   function copyLink() {
     navigator.clipboard.writeText(window.location.href).then(() => {
