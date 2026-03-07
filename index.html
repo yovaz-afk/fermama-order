@@ -28,6 +28,19 @@
     .btn-grad:active { transform: scale(0.97); }
     .text-grad { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 
+    /* ---- Автодополнение клиентов ---- */
+    .client-suggestions {
+      position: absolute; left: 0; right: 0; top: 100%;
+      background: white; border: 1.5px solid var(--border-warm);
+      border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      z-index: 50; overflow: hidden; margin-top: 4px;
+    }
+    .client-suggestion-item {
+      padding: 11px 16px; font-size: 14px; font-weight: 600;
+      color: #334155; cursor: pointer; transition: background 0.12s;
+    }
+    .client-suggestion-item:hover, .client-suggestion-item:active { background: #f0fdf4; }
+
     /* ---- Admin panel: обновление цен ---- */
     .admin-overlay {
       display: none; position: fixed; inset: 0;
@@ -556,7 +569,46 @@
     // =========================
     let _sendText = '';
 
+    // =========================
+    // ИСТОРИЯ КЛИЕНТОВ
+    // =========================
+    function loadClients() {
+      try { return JSON.parse(localStorage.getItem('fermama_clients') || '[]'); } catch(e) { return []; }
+    }
+
+    function saveClient(name) {
+      name = name.trim();
+      if (!name) return;
+      let list = loadClients().filter(c => c.toLowerCase() !== name.toLowerCase());
+      list.unshift(name);
+      if (list.length > 30) list = list.slice(0, 30);
+      localStorage.setItem('fermama_clients', JSON.stringify(list));
+    }
+
+    function showClientSuggestions(query) {
+      const box = document.getElementById('clientSuggestions');
+      if (!box) return;
+      const all = loadClients();
+      const q = query.trim().toLowerCase();
+      const matches = q ? all.filter(c => c.toLowerCase().includes(q)) : all;
+      if (!matches.length) { box.classList.add('hidden'); return; }
+      box.innerHTML = matches.slice(0, 6).map(c =>
+        `<div class="client-suggestion-item" onmousedown="pickClient(event,'${c.replace(/'/g,"&#39;")}')">${c}</div>`
+      ).join('');
+      box.classList.remove('hidden');
+    }
+
+    function pickClient(e, name) {
+      e.preventDefault();
+      state.clientName = name;
+      const field = document.getElementById('clientField');
+      if (field) { field.value = name; field.blur(); }
+      document.getElementById('clientSuggestions')?.classList.add('hidden');
+      updateHeaderResetVisibility();
+    }
+
     function openSendSheet(text) {
+      saveClient(state.clientName);
       _sendText = text;
       const encoded = encodeURIComponent(text);
       const tgBtn = document.getElementById('sendTgBtn');
@@ -618,6 +670,7 @@
 
     async function handleCopy() {
       if (state.orderItems.length === 0) return;
+      saveClient(state.clientName);
 
       // ✅ для копирования делаю "share"-версию (без риска, что мессенджер покажет **)
       const text = generateMessageText('share');
@@ -889,12 +942,16 @@
                   ${iconSvg('store', 12, 'text-[#C42121]')} Клиент <span style="color:#C42121">*</span>
                 </label>
 
-                <textarea
-                  id="clientField"
-                  rows="1"
-                  placeholder="Название магазина / ФИО"
-                  class="w-full rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 transition-all resize-none overflow-hidden" style="background:var(--bg);border:1.5px solid var(--border-warm)"
-                ></textarea>
+                <div class="relative">
+                  <textarea
+                    id="clientField"
+                    rows="1"
+                    placeholder="Название магазина / ФИО"
+                    class="w-full rounded-2xl px-4 py-3 text-sm font-bold text-slate-700 placeholder:text-slate-300 focus:outline-none focus:ring-2 transition-all resize-none overflow-hidden" style="background:var(--bg);border:1.5px solid var(--border-warm)"
+                    autocomplete="off"
+                  ></textarea>
+                  <div id="clientSuggestions" class="client-suggestions hidden"></div>
+                </div>
               </div>
 
               <div class="space-y-1">
@@ -1311,6 +1368,15 @@
       clientField.addEventListener('input', (e) => {
         state.clientName = e.target.value;
         updateHeaderResetVisibility();
+        showClientSuggestions(e.target.value);
+      });
+      clientField.addEventListener('focus', (e) => {
+        showClientSuggestions(e.target.value);
+      });
+      clientField.addEventListener('blur', () => {
+        setTimeout(() => {
+          document.getElementById('clientSuggestions')?.classList.add('hidden');
+        }, 150);
       });
 
       const dateField = document.getElementById('dateField');
