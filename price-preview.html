@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ФерМама — Прайс-лист КП</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --green: #6BBF23;
@@ -581,6 +582,7 @@
       <div class="header-title">Оптовый прайс-лист</div>
       <div class="header-subtitle">Натуральные полуфабрикаты собственного производства</div>
       <div class="header-date" id="priceDate"></div>
+      <div id="syncBadge" style="display:none;margin-top:6px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px;"></div>
     </div>
   </div>
 
@@ -668,6 +670,11 @@
 </div>
 
 <script>
+  // ── Supabase ──────────────────────────────────────────────────────────────
+  const SUPA_URL = 'https://uzuvopmwrbnewvhvjjju.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6dXZvcG13cmJuZXd2aHZqamp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTY4ODMsImV4cCI6MjA4ODk5Mjg4M30.PfJHpzNxRv7Ym0aB25EJ878A6Pvb2s7dY4gr2G46TPk';
+  const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
   // Имена хитов — цены подтягиваются из PRODUCTS ниже
   const HIT_NAMES = [
     'Пельмени Домашние 900 гр',
@@ -825,63 +832,88 @@
     { name: 'Фарш Свиной вес.',                  cat: 'Фарш', unit: 'кг', price: 395 },
   ];
 
-  // Применить сохранённые цены + новые позиции из localStorage
-  (function() {
+  // ── Загрузка цен из Supabase и рендер ────────────────────────────────────
+  async function initPrices() {
+    setSyncStatus('loading');
     try {
-      const idMap = {};
-      PRODUCTS.forEach(p => { idMap[p.id] = p; });
+      const { data, error } = await supa
+        .from('fermama_prices')
+        .select('name, price');
 
-      const saved = JSON.parse(localStorage.getItem('fermama_prices') || '{}');
-      Object.entries(saved).forEach(([id, price]) => {
-        if (idMap[id]) idMap[id].price = price;
-      });
+      if (error) throw error;
 
-      // Новые позиции
-      const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
-      const existingIds = new Set(PRODUCTS.map(p => p.id));
-      newProds.forEach(p => {
-        if (!existingIds.has(p.id)) {
-          const cat = guessCat(p.name);
-          PRODUCTS.push({ ...p, cat });
-        }
-      });
-    } catch(e) {}
-  })();
+      if (data && data.length > 0) {
+        const nameMap = {};
+        PRODUCTS.forEach(p => { nameMap[p.name] = p; });
+        data.forEach(row => {
+          if (nameMap[row.name]) {
+            nameMap[row.name].price = row.price;
+          } else {
+            // Позиция из Supabase которой нет в базовом массиве
+            PRODUCTS.push({ name: row.name, cat: guessCat(row.name), unit: /вес\./i.test(row.name) ? 'кг' : 'шт', price: row.price });
+          }
+        });
+        setSyncStatus('ok');
+      } else {
+        setSyncStatus('default');
+      }
+    } catch(e) {
+      console.warn('Supabase недоступен, показываем базовые цены', e);
+      setSyncStatus('offline');
+    }
+    renderAll();
+  }
+
+  function setSyncStatus(state) {
+    const el = document.getElementById('syncBadge');
+    if (!el) return;
+    const states = {
+      loading: { text: '⏳ Загрузка цен…',      bg: '#f0f0f0', color: '#666' },
+      ok:      { text: '✅ Цены актуальны',      bg: '#e8f5e9', color: '#2e7d32' },
+      default: { text: 'ℹ️ Базовые цены',        bg: '#fff3e0', color: '#e65100' },
+      offline: { text: '⚠️ Нет связи с базой',   bg: '#fff3e0', color: '#e65100' },
+    };
+    const s = states[state] || states.offline;
+    el.textContent = s.text;
+    el.style.background = s.bg;
+    el.style.color = s.color;
+    el.style.display = 'inline-block';
+  }
+
+  // ── Вспомогательные функции ───────────────────────────────────────────────
 
   function guessCat(name) {
     const n = name.toLowerCase();
-    if (n.includes('вареник')) return 'Вареники';
-    if (n.includes('голубц')) return 'Голубцы';
-    if (n.includes('зраз')) return 'Зразы';
-    if (n.includes('котлет')) return 'Котлеты';
-    if (n.includes('мант')) return 'Манты';
-    if (n.includes('наггетс')) return 'Наггетсы';
-    if (n.includes('пельмен')) return 'Пельмени';
+    if (n.includes('вареник'))  return 'Вареники';
+    if (n.includes('голубц'))   return 'Голубцы';
+    if (n.includes('зраз'))     return 'Зразы';
+    if (n.includes('котлет'))   return 'Котлеты';
+    if (n.includes('мант'))     return 'Манты';
+    if (n.includes('наггетс'))  return 'Наггетсы';
+    if (n.includes('пельмен'))  return 'Пельмени';
     if (n.includes('подкогол')) return 'Подкоголи';
-    if (n.includes('равиол')) return 'Равиоли';
+    if (n.includes('равиол'))   return 'Равиоли';
     if (n.includes('фрикадел')) return 'Фрикадельки';
-    if (n.includes('чебурек')) return 'Чебуреки';
-    if (n.includes('сырник')) return 'Сырники';
-    if (n.includes('колбас')) return 'Колбаски';
-    if (n.includes('фарш')) return 'Фарш';
-    if (n.includes('тесто')) return 'Тесто';
+    if (n.includes('чебурек'))  return 'Чебуреки';
+    if (n.includes('сырник'))   return 'Сырники';
+    if (n.includes('колбас'))   return 'Колбаски';
+    if (n.includes('фарш'))     return 'Фарш';
+    if (n.includes('тесто'))    return 'Тесто';
     return 'Прочее';
   }
 
-  // Рендер хитов из PRODUCTS (цены синхронизированы)
-  document.getElementById('hitsGrid').innerHTML = HIT_NAMES
-    .map(n => PRODUCTS.find(p => p.name === n))
-    .filter(Boolean)
-    .map(h => `
-      <div class="hit-card">
-        <div class="hit-card-name">${h.name}</div>
-        <div class="hit-card-price">${h.price.toLocaleString('ru')} ₽</div>
-        <div class="hit-card-unit">за ${h.unit}</div>
-      </div>`)
-    .join('');
+  function normPriceName(s) {
+    return s.toLowerCase().replace(/\s*фермама\s*/gi, '').replace(/\s+/g, ' ').trim();
+  }
 
+  function getBasePriceName(name) {
+    return name.replace(/\s*(?:\d+\s*(?:гр|г)|вес\.)\s*$/i, '').trim();
+  }
 
-  const AWARD_WINNERS = new Set([
+  // ── Рендер ────────────────────────────────────────────────────────────────
+
+  // Лидеры продаж — бейдж только на этих товарах
+  const LEADERS = new Set([
     'Пельмени Домашние 450 гр',
     'Пельмени Домашние 900 гр',
     'Пельмени Домашние вес.',
@@ -891,72 +923,62 @@
     'Наггетсы Фирменные вес.',
   ]);
 
-  // Группировка (порядок категорий сохраняется как в массиве)
-  const catOrder = [];
-  const cats = {};
-  PRODUCTS.forEach(p => {
-    if (!cats[p.cat]) { cats[p.cat] = []; catOrder.push(p.cat); }
-    cats[p.cat].push(p);
-  });
+  function renderAll() {
+    // Хиты
+    document.getElementById('hitsGrid').innerHTML = HIT_NAMES
+      .map(n => PRODUCTS.find(p => p.name === n))
+      .filter(Boolean)
+      .map(h => `
+        <div class="hit-card">
+          <div class="hit-card-name">${h.name}</div>
+          <div class="hit-card-price">${h.price.toLocaleString('ru')} ₽</div>
+          <div class="hit-card-unit">за ${h.unit}</div>
+        </div>`)
+      .join('');
 
-  const container = document.getElementById('productsContainer');
-  let rowNum = 1;
+    // Таблица по категориям
+    const catOrder = [];
+    const cats = {};
+    PRODUCTS.forEach(p => {
+      if (!cats[p.cat]) { cats[p.cat] = []; catOrder.push(p.cat); }
+      cats[p.cat].push(p);
+    });
 
-  catOrder.forEach(cat => {
-    const items = cats[cat];
-    const block = document.createElement('div');
-    block.className = 'category-block';
+    const container = document.getElementById('productsContainer');
+    container.innerHTML = '';
+    let rowNum = 1;
 
-    let rows = items.map(p => {
-      const medal = AWARD_WINNERS.has(p.name) ? ' 🥇' : '';
-      return `
-      <tr>
-        <td>${rowNum++}. ${p.name}${medal}</td>
-        <td><span class="unit-badge ${p.unit === 'шт' ? 'sht' : 'kg'}">${p.unit}</span></td>
-        <td>${p.price.toLocaleString('ru')} ₽</td>
-      </tr>
-    `;
-    }).join('');
+    catOrder.forEach(cat => {
+      const items = cats[cat];
+      const block = document.createElement('div');
+      block.className = 'category-block';
 
-    block.innerHTML = `
-      <div class="category-name">${cat}</div>
-      <table>
-        <thead><tr>
-          <th>Наименование</th><th>Ед.</th><th>Цена</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `;
-    container.appendChild(block);
-  });
+      const rows = items.map(p => {
+        const badge = LEADERS.has(p.name)
+          ? ' <span style="background:#fff3e0;color:#e65100;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;vertical-align:middle;">лидер продаж</span>'
+          : '';
+        return `
+          <tr>
+            <td>${rowNum++}. ${p.name}${badge}</td>
+            <td><span class="unit-badge ${p.unit === 'шт' ? 'sht' : 'kg'}">${p.unit}</span></td>
+            <td>${p.price.toLocaleString('ru')} ₽</td>
+          </tr>`;
+      }).join('');
 
-  // =========================
-  // ПАНЕЛЬ ОБНОВЛЕНИЯ ЦЕН
-  // =========================
-  function normPriceName(s) {
-    return s.toLowerCase().replace(/\s*фермама\s*/gi, '').replace(/\s+/g, ' ').trim();
+      block.innerHTML = `
+        <div class="category-name">${cat}</div>
+        <table>
+          <thead><tr>
+            <th>Наименование</th><th>Ед.</th><th>Цена</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      container.appendChild(block);
+    });
   }
 
-  function parsePriceCsvAdmin(text) {
-    const results = [];
-    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-    for (const line of lines) {
-      const parts = line.split('\t').map(s => s.trim()).filter(Boolean);
-      if (parts.length < 2) continue;
-      let name, priceStr;
-      if (/^\d+$/.test(parts[0])) {
-        name = parts[1]; priceStr = parts[2];
-      } else {
-        name = parts[0]; priceStr = parts[parts.length - 1];
-      }
-      if (!name || !priceStr) continue;
-      const price = parseInt(String(priceStr).replace(/[^\d]/g, ''));
-      if (!isNaN(price) && price > 0) results.push({ name, price });
-    }
-    return results;
-  }
+  // ── Admin панель (5 тапов по логотипу) ───────────────────────────────────
 
-  // Секретный вход: 5 тапов по логотипу
   let _logoTaps = 0, _logoTimer = null;
   function handleLogoTap() {
     _logoTaps++;
@@ -980,41 +1002,53 @@
     document.getElementById('adminOverlay').classList.remove('open');
   }
 
-  function applyPriceAdmin() {
+  function parsePriceCsvAdmin(text) {
+    const results = [];
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      const parts = line.split('\t').map(s => s.trim()).filter(Boolean);
+      if (parts.length < 2) continue;
+      let name, priceStr;
+      if (/^\d+$/.test(parts[0])) { name = parts[1]; priceStr = parts[2]; }
+      else { name = parts[0]; priceStr = parts[parts.length - 1]; }
+      if (!name || !priceStr) continue;
+      const price = parseInt(String(priceStr).replace(/[^\d]/g, ''));
+      if (!isNaN(price) && price > 0) results.push({ name, price });
+    }
+    return results;
+  }
+
+  async function applyPriceAdmin() {
     const text = document.getElementById('adminCsvInput').value;
     const pairs = parsePriceCsvAdmin(text);
     const res = document.getElementById('adminResult');
     res.style.display = 'block';
     if (!pairs.length) { res.textContent = '⚠️ Данные не распознаны. Скопируйте два столбца из Excel.'; return; }
 
+    res.textContent = '⏳ Сохраняю в базу…';
+
     const nameMap = {};
     PRODUCTS.forEach(p => { nameMap[normPriceName(p.name)] = p; });
 
-    const overrides = JSON.parse(localStorage.getItem('fermama_prices') || '{}');
-    const matched = [], skipped = [];
-
-    function getBasePriceName(name) {
-      return name.replace(/\s*(?:\d+\s*(?:гр|г)|вес\.)\s*$/i, '').trim();
-    }
-
-    // bulkCalc: baseName → { bulkPrice, weightG } — берём наибольшую пачку
+    const toUpsert = [];   // строки для Supabase
+    const matched  = [];
+    const skipped  = [];
     const bulkCalc = new Map();
 
     pairs.forEach(({ name, price }) => {
       const p = nameMap[normPriceName(name)];
       if (p) {
-        overrides[p.id] = price;
+        p.price = price;
+        toUpsert.push({ name: p.name, cat: p.cat, unit: p.unit, price, updated_at: new Date().toISOString() });
         matched.push(name);
-
         if (p.unit === 'шт') {
           const m = p.name.match(/(\d+)\s*(?:гр|г)/i);
           if (m) {
             const weightG = parseInt(m[1]);
-            const base = getBasePriceName(p.name);
-            const existing = bulkCalc.get(base);
-            if (!existing || weightG > existing.weightG) {
-              bulkCalc.set(base, { bulkPrice: Math.round(price / (weightG / 1000)), weightG });
-            }
+            const base    = getBasePriceName(p.name);
+            const ex      = bulkCalc.get(base);
+            if (!ex || weightG > ex.weightG)
+              bulkCalc.set(base, { bulkPrice: Math.round(price / (weightG / 1000)), weightG, base });
           }
         }
       } else {
@@ -1022,47 +1056,57 @@
       }
     });
 
-    // Применить авторасчитанные весовые цены
-    bulkCalc.forEach(({ bulkPrice, weightG }, base) => {
+    // Авторасчёт весовых цен
+    bulkCalc.forEach(({ bulkPrice, weightG, base }) => {
       const bulk = PRODUCTS.find(b => b.unit === 'кг' && getBasePriceName(b.name) === base);
       if (bulk) {
-        overrides[bulk.id] = bulkPrice;
+        bulk.price = bulkPrice;
+        toUpsert.push({ name: bulk.name, cat: bulk.cat, unit: bulk.unit, price: bulkPrice, updated_at: new Date().toISOString() });
         matched.push(`${bulk.name} → ${bulkPrice} ₽/кг (авто по ${weightG}г)`);
       }
     });
 
-    // Добавить новые позиции которых не было в каталоге
-    const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
+    // Новые позиции которых нет в каталоге
     skipped.forEach(({ name, price }) => {
       const cleanName = name.replace(/\s*ФерМама\s*/gi, '').trim();
       const unit = /вес\./i.test(cleanName) ? 'кг' : 'шт';
-      const norm = normPriceName(cleanName);
-      const existing = newProds.find(p => normPriceName(p.name) === norm);
+      const cat  = guessCat(cleanName);
+      const existing = PRODUCTS.find(p => normPriceName(p.name) === normPriceName(cleanName));
       if (existing) {
         existing.price = price;
-        overrides[existing.id] = price;
+        toUpsert.push({ name: existing.name, cat: existing.cat, unit: existing.unit, price, updated_at: new Date().toISOString() });
         matched.push(`${cleanName} → ${price} ₽ (обновлено)`);
       } else {
-        const id = 'np_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-        newProds.push({ id, name: cleanName, unit, price });
-        overrides[id] = price;
+        PRODUCTS.push({ name: cleanName, cat, unit, price });
+        toUpsert.push({ name: cleanName, cat, unit, price, updated_at: new Date().toISOString() });
         matched.push(`${cleanName} → ${price} ₽ (добавлено)`);
       }
     });
-    localStorage.setItem('fermama_new_products', JSON.stringify(newProds));
-    localStorage.setItem('fermama_prices', JSON.stringify(overrides));
 
-    res.textContent = `✅ Применено: ${matched.length} позиций. Страница перезагрузится...`;
-    setTimeout(() => location.reload(), 1800);
+    // Сохраняем в Supabase
+    try {
+      const { error } = await supa.from('fermama_prices').upsert(toUpsert, { onConflict: 'name' });
+      if (error) throw error;
+      setSyncStatus('ok');
+      res.textContent = `✅ Сохранено в базе: ${matched.length} позиций. Страница обновится…`;
+    } catch(e) {
+      res.textContent = `⚠️ Ошибка Supabase: ${e.message}. Попробуйте ещё раз.`;
+      return;
+    }
+
+    setTimeout(() => { closePriceAdmin(); renderAll(); }, 1500);
   }
 
-  function resetPriceAdmin() {
-    localStorage.removeItem('fermama_prices');
-    localStorage.removeItem('fermama_new_products');
+  async function resetPriceAdmin() {
+    if (!confirm('Сбросить все цены до базовых?')) return;
+    await supa.from('fermama_prices').delete().neq('name', '___never___');
     location.reload();
   }
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePriceAdmin(); closeSharePopup(); } });
+
+  // ── Запуск ────────────────────────────────────────────────────────────────
+  initPrices();
 </script>
 </body>
 </html>
