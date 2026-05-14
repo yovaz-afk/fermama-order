@@ -1138,27 +1138,27 @@
 
       app.innerHTML = `
         <div class="min-h-screen max-w-lg mx-auto pb-48">
-          <header class="bg-white sticky top-0 z-20 px-4 py-4 border-b border-slate-100 flex justify-between items-center shadow-sm">
-            <div class="flex items-center gap-2">
+          <header class="bg-white sticky top-0 z-20 px-4 py-3 border-b border-slate-100 shadow-sm">
+            <div class="flex items-center gap-2 min-w-0">
               <img src="logo.jpg" class="w-9 h-9 rounded-lg object-cover" alt="ФерМама"/>
-              <h1 class="font-bold tracking-tight text-lg text-grad whitespace-nowrap">Заявки ФерМама</h1>
+              <h1 class="font-bold tracking-tight text-lg text-grad truncate">Заявки ФерМама</h1>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="mt-2 flex items-center gap-2 flex-wrap">
               <button id="adminBtn" onclick="openAdmin()" type="button"
                 class="text-slate-300 hover:text-slate-500 transition-colors p-1 relative" title="Обновить цены">
                 ${iconSvg('settings', 18)}
                 ${Object.keys(JSON.parse(localStorage.getItem('fermama_prices')||'{}')).length > 0 ? '<span class="absolute top-0 right-0 w-2 h-2 bg-amber-400 rounded-full"></span>' : ''}
               </button>
               <a href="price-preview.html" target="_blank"
-                class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl btn-grad transition-all whitespace-nowrap">
+                class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl btn-grad transition-all whitespace-nowrap h-8">
                 📄 Прайс
               </a>
               <button id="refreshPricesBtn" onclick="refreshPricesFromGoogleSheets()" type="button"
-                class="flex items-center gap-1 text-xs font-bold text-slate-700 px-3 py-1.5 rounded-xl transition-all whitespace-nowrap"
+                class="flex items-center gap-1 text-xs font-bold text-slate-700 px-3 py-1.5 rounded-xl transition-all whitespace-nowrap h-8"
                 style="background:#f1f5f9;border:1px solid #e2e8f0;">
                 ${iconSvg('rotateCcw', 14)} Обновить прайс
               </button>
-              <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-red-400 hover:text-red-600 transition-colors" type="button">
+              <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-red-400 hover:text-red-600 transition-colors h-8" type="button">
                 ${iconSvg('rotateCcw', 14)} Очистить
               </button>
             </div>
