@@ -6,6 +6,7 @@
   <title>ФерМама — Прайс-лист КП</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
   <style>
     :root {
       --green: #6BBF23;
@@ -521,7 +522,10 @@
 
       .page-wrapper { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; width: 100%; }
       .top-bar, .share-popup, .share-overlay, .admin-overlay { display: none !important; }
-      .category-block { page-break-inside: avoid; }
+      .category-block { break-inside: auto; page-break-inside: auto; }
+      .category-name { break-after: avoid; page-break-after: avoid; }
+      table { break-inside: auto; page-break-inside: auto; }
+      tr { break-inside: avoid; page-break-inside: avoid; page-break-after: auto; }
 
       /* Хедер */
       .header { background: #6BBF23 !important; padding: 24px 28px !important; flex-direction: row !important; align-items: center !important; text-align: left !important; }
@@ -741,15 +745,33 @@
   const emailBody = encodeURIComponent('Здравствуйте!\n\nПрисылаю прайс-лист на продукцию ФерМама.\nДля оформления заявки напишите нам:\nTelegram: @FerMama_delivery\nТел.: 8 (927) 883-01-69\n\n' + window.location.href);
   document.getElementById('emailShareBtn').href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
 
-  // PDF download — встроенный print браузера
-  function downloadPDF() {
+  // PDF download — реальное скачивание файла без диалога печати
+  async function downloadPDF() {
     closeSharePopup();
     const btn = document.querySelector('.btn-pdf');
-    if (btn) { btn.textContent = '⏳ Загрузка…'; btn.disabled = true; }
-    setTimeout(() => {
-      if (btn) { btn.textContent = '⬇ Скачать PDF'; btn.disabled = false; }
+    if (btn) { btn.textContent = '⏳ Готовлю PDF…'; btn.disabled = true; }
+    try {
+      const el = document.querySelector('.page-wrapper');
+      if (!el || typeof html2pdf === 'undefined') {
+        window.print();
+        return;
+      }
+      const ts = new Date();
+      const stamp = `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`;
+      await html2pdf().set({
+        margin: [8, 8, 8, 8],
+        filename: `fermama-price-${stamp}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      }).from(el).save();
+    } catch (e) {
+      console.error('PDF export failed:', e);
       window.print();
-    }, 200);
+    } finally {
+      if (btn) { btn.textContent = '⬇ Скачать PDF'; btn.disabled = false; }
+    }
   }
 
   // Отдельная кнопка для прямой печати
