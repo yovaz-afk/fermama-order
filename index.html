@@ -6,6 +6,7 @@
   <title>Заявки ФерМама</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -122,6 +123,10 @@
   <div id="app"></div>
 
   <script>
+    const SUPA_URL = 'https://uzuvopmwrbnewvhvjjju.supabase.co';
+    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6dXZvcG13cmJuZXd2aHZqamp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MTY4ODMsImV4cCI6MjA4ODk5Mjg4M30.PfJHpzNxRv7Ym0aB25EJ878A6Pvb2s7dY4gr2G46TPk';
+    const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
     // =========================
     // ДАННЫЕ (строго из constants.ts во вложении)
     // =========================
@@ -200,21 +205,25 @@
     // =========================
     // СОРТИРОВКА (строго как в App.tsx)
     // =========================
-    const getBaseName = (name) => name.replace(/\s*(?:(?:\d+\s*(?:гр|г|г))|вес\.)\s*$/i, '').trim();
+    const getBaseName = (name) => name.replace(/\s*(?:(?:\d+\s*(?:гр|г|г))|вес\.?)\s*$/i, '').trim();
     const getWeightInGram = (name) => {
       const match = name.match(/(\d+)\s*(?:гр|г|г)/i);
       return match ? parseInt(match[1], 10) : Infinity;
     };
 
-    const SORTED_PRODUCTS = [...PRODUCTS].sort((a, b) => {
-      const baseA = getBaseName(a.name);
-      const baseB = getBaseName(b.name);
-      if (baseA !== baseB) return baseA.localeCompare(baseB, 'ru');
-      if (a.unit === 'шт' && b.unit === 'кг') return -1;
-      if (a.unit === 'кг' && b.unit === 'шт') return 1;
-      if (a.unit === 'шт' && b.unit === 'шт') return getWeightInGram(a.name) - getWeightInGram(b.name);
-      return 0;
-    });
+    let SORTED_PRODUCTS = [];
+    function resortProducts() {
+      SORTED_PRODUCTS = [...PRODUCTS].sort((a, b) => {
+        const baseA = getBaseName(a.name);
+        const baseB = getBaseName(b.name);
+        if (baseA !== baseB) return baseA.localeCompare(baseB, 'ru');
+        if (a.unit === 'шт' && b.unit === 'кг') return -1;
+        if (a.unit === 'кг' && b.unit === 'шт') return 1;
+        if (a.unit === 'шт' && b.unit === 'шт') return getWeightInGram(a.name) - getWeightInGram(b.name);
+        return 0;
+      });
+    }
+    resortProducts();
 
     // Применить сохранённые цены + новые позиции из localStorage
     (function() {
@@ -226,11 +235,59 @@
         newProds.forEach(p => {
           if (!existingIds.has(p.id)) {
             PRODUCTS.push(p);
-            SORTED_PRODUCTS.push(p);
+            resortProducts();
           }
         });
       } catch(e) {}
     })();
+
+    function inferProductUnit(name) {
+      return /\bвес\.?\b/i.test(name) ? 'кг' : 'шт';
+    }
+
+    function syncRenderedPrices() {
+      state.orderItems.forEach(item => {
+        if (!item.productId) return;
+        const p = productById(item.productId);
+        if (!p) return;
+        const el = document.getElementById(`row-${item.id}`);
+        if (!el) return;
+        const priceBox = el.querySelector('[data-row="price"]');
+        if (priceBox) priceBox.textContent = `${p.price}₽/${p.unit}`;
+        updateRowSum(item.id);
+      });
+      updateFooterTotals();
+    }
+
+    async function loadPricesFromSupabase() {
+      try {
+        const { data, error } = await supa.from('fermama_prices').select('name, price');
+        if (error || !data) return;
+
+        const byKey = {};
+        PRODUCTS.forEach(p => { byKey[normalizePriceName(p.name)] = p; });
+
+        data.forEach(row => {
+          const key = normalizePriceName(row.name);
+          const existing = byKey[key];
+          if (existing) {
+            existing.price = row.price;
+            return;
+          }
+          const np = {
+            id: 'sp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            name: row.name,
+            unit: inferProductUnit(row.name),
+            price: row.price
+          };
+          PRODUCTS.push(np);
+          byKey[key] = np;
+        });
+
+        resortProducts();
+        syncRenderedPrices();
+      } catch(e) {}
+    }
 
     // =========================
     // ИКОНКИ (SVG)
@@ -430,6 +487,10 @@
     function normalizePriceName(s) {
       return s.toLowerCase()
         .replace(/\s*фермама\s*/gi, '')
+        .replace(/ё/g, 'е')
+        .replace(/(\d+)\s*(гр|г)\b/gi, '$1г')
+        .replace(/\bвес\.?\b/gi, 'вес')
+        .replace(/[.,;:]+/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -454,6 +515,148 @@
       return results;
     }
 
+    function parseCsvLine(line) {
+      const out = [];
+      let cur = '';
+      let q = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (q && line[i + 1] === '"') { cur += '"'; i++; }
+          else q = !q;
+        } else if (ch === ',' && !q) {
+          out.push(cur); cur = '';
+        } else cur += ch;
+      }
+      out.push(cur);
+      return out.map(s => s.trim());
+    }
+
+    function parseCsvText(text) {
+      return text
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(Boolean)
+        .map(parseCsvLine);
+    }
+
+    function parseSheetPrice(v) {
+      const n = parseInt(String(v || '').replace(/[^\d]/g, ''), 10);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function buildRecordsFromSheet(rows) {
+      const records = [];
+      rows.forEach(cols => {
+        if (cols.length < 4) return;
+        const name = String(cols[1] || '').trim();
+        const composition = String(cols[2] || '').trim();
+        const price = parseSheetPrice(cols[3]);
+        if (!name || !price) return;
+        records.push({
+          name,
+          composition,
+          price,
+          unit: inferProductUnit(name)
+        });
+      });
+      return records;
+    }
+
+    async function fetchSheetRecords() {
+      const sheetId = '137bI11Xrjn7if8kyb2-M7YLnAbLSvKMCTXJUOEOMDhg';
+      const tabs = ['Прайс штучный', 'Прайс весовой'];
+      const all = [];
+
+      for (const tab of tabs) {
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+        const resp = await fetch(url, { cache: 'no-store' });
+        if (!resp.ok) throw new Error(`Не удалось прочитать вкладку: ${tab}`);
+        const text = await resp.text();
+        all.push(...buildRecordsFromSheet(parseCsvText(text)));
+      }
+
+      const byNorm = new Map();
+      all.forEach(r => byNorm.set(normalizePriceName(r.name), r));
+      return [...byNorm.values()];
+    }
+
+    function applyRecordsToProducts(records) {
+      const byNorm = {};
+      PRODUCTS.forEach(p => { byNorm[normalizePriceName(p.name)] = p; });
+      const overrides = JSON.parse(localStorage.getItem('fermama_prices') || '{}');
+      const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
+
+      records.forEach(r => {
+        const key = normalizePriceName(r.name);
+        const existing = byNorm[key];
+        if (existing) {
+          existing.price = r.price;
+          existing.composition = r.composition || existing.composition || '';
+          overrides[existing.id] = r.price;
+          return;
+        }
+
+        const fromNew = newProds.find(p => normalizePriceName(p.name) === key);
+        if (fromNew) {
+          fromNew.price = r.price;
+          fromNew.composition = r.composition || fromNew.composition || '';
+          overrides[fromNew.id] = r.price;
+          return;
+        }
+
+        const np = {
+          id: 'gs_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          name: r.name,
+          unit: r.unit,
+          price: r.price,
+          composition: r.composition || ''
+        };
+        PRODUCTS.push(np);
+        newProds.push(np);
+        overrides[np.id] = np.price;
+      });
+
+      localStorage.setItem('fermama_prices', JSON.stringify(overrides));
+      localStorage.setItem('fermama_new_products', JSON.stringify(newProds));
+      resortProducts();
+      syncRenderedPrices();
+    }
+
+    async function upsertRecordsToSupabase(records) {
+      const rows = records.map(r => ({
+        name: r.name.replace(/\s*ФерМама\s*/gi, ' ').replace(/\s+/g, ' ').trim(),
+        unit: r.unit,
+        price: r.price,
+        composition: r.composition || '',
+        updated_at: new Date().toISOString()
+      }));
+
+      let { error } = await supa.from('fermama_prices').upsert(rows, { onConflict: 'name' });
+      if (!error) return;
+
+      // Fallback for older schema without `composition` column
+      const fallback = rows.map(({ composition, ...rest }) => rest);
+      const second = await supa.from('fermama_prices').upsert(fallback, { onConflict: 'name' });
+      if (second.error) throw second.error;
+    }
+
+    async function refreshPricesFromGoogleSheets() {
+      const btn = document.getElementById('refreshPricesBtn');
+      if (btn) btn.disabled = true;
+      setStatus('success', 'Обновляю прайс из Google Sheets...');
+      try {
+        const records = await fetchSheetRecords();
+        applyRecordsToProducts(records);
+        await upsertRecordsToSupabase(records);
+        setStatus('success', `Прайс обновлён: ${records.length} позиций`);
+      } catch (e) {
+        setStatus('error', `Ошибка обновления прайса: ${e.message || e}`);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     function openAdmin() {
       document.getElementById('adminOverlay').classList.add('open');
       const res = document.getElementById('adminResult');
@@ -465,7 +668,7 @@
       document.getElementById('adminOverlay').classList.remove('open');
     }
 
-    function applyPricesCsv() {
+    async function applyPricesCsv() {
       const text = document.getElementById('adminCsvInput').value;
       const pairs = parsePriceCsv(text);
       const res = document.getElementById('adminResult');
@@ -517,10 +720,9 @@
 
       // Добавить новые позиции которых не было в каталоге
       const newProds = JSON.parse(localStorage.getItem('fermama_new_products') || '[]');
-      const newProdNorms = new Set(newProds.map(p => normalizePriceName(p.name)));
       skipped.forEach(({ name, price }) => {
         const cleanName = name.replace(/\s*ФерМама\s*/gi, '').trim();
-        const unit = /вес\./i.test(cleanName) ? 'кг' : 'шт';
+        const unit = inferProductUnit(cleanName);
         const id = 'np_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
         const norm = normalizePriceName(cleanName);
         const existing = newProds.find(p => normalizePriceName(p.name) === norm);
@@ -532,7 +734,7 @@
           const np = { id, name: cleanName, unit, price };
           newProds.push(np);
           PRODUCTS.push(np);
-          SORTED_PRODUCTS.push(np);
+          resortProducts();
           overrides[id] = price;
           matched.push(`${cleanName} → ${price} ₽ (добавлено)`);
         }
@@ -540,6 +742,18 @@
       localStorage.setItem('fermama_new_products', JSON.stringify(newProds));
 
       localStorage.setItem('fermama_prices', JSON.stringify(overrides));
+      try {
+        const touchedProducts = PRODUCTS.filter(p => overrides[p.id] != null);
+        if (touchedProducts.length) {
+          const toUpsert = touchedProducts.map(p => ({
+            name: p.name,
+            unit: p.unit,
+            price: p.price,
+            updated_at: new Date().toISOString()
+          }));
+          await supa.from('fermama_prices').upsert(toUpsert, { onConflict: 'name' });
+        }
+      } catch(e) {}
 
       // Обновить отображение уже добавленных строк
       state.orderItems.forEach(item => {
@@ -908,6 +1122,11 @@
                 class="flex items-center gap-1 text-xs font-bold text-white px-3 py-1.5 rounded-xl btn-grad transition-all whitespace-nowrap">
                 📄 Прайс
               </a>
+              <button id="refreshPricesBtn" onclick="refreshPricesFromGoogleSheets()" type="button"
+                class="flex items-center gap-1 text-xs font-bold text-slate-700 px-3 py-1.5 rounded-xl transition-all whitespace-nowrap"
+                style="background:#f1f5f9;border:1px solid #e2e8f0;">
+                ${iconSvg('rotateCcw', 14)} Обновить прайс
+              </button>
               <button id="resetBtn" class="hidden flex items-center gap-1 text-xs font-bold text-red-400 hover:text-red-600 transition-colors" type="button">
                 ${iconSvg('rotateCcw', 14)} Очистить
               </button>
@@ -1418,6 +1637,7 @@
     // Старт
     // =========================
     render();
+    loadPricesFromSupabase();
   </script>
 </body>
 </html>

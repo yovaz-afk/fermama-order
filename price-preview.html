@@ -309,16 +309,18 @@
       padding: 8px 12px;
       text-align: left;
     }
-    thead th:nth-child(2) { text-align: center; width: 64px; }
-    thead th:nth-child(3) { text-align: right;  width: 100px; }
+    thead th:nth-child(2) { text-align: left; }
+    thead th:nth-child(3) { text-align: center; width: 64px; }
+    thead th:nth-child(4) { text-align: right;  width: 100px; }
 
     tbody tr { border-bottom: 1px solid #f0f0f0; }
     tbody tr:last-child { border-bottom: none; }
 
     td { padding: 9px 12px; font-size: 13px; }
     td:nth-child(1) { color: #222; font-weight: 500; }
-    td:nth-child(2) { text-align: center; width: 64px; color: #777; font-size: 12px; white-space: nowrap; }
-    td:nth-child(3) { text-align: right;  width: 100px; font-weight: 700; color: var(--green-dark); white-space: nowrap; padding-right: 20px; }
+    td:nth-child(2) { color: #475569; font-size: 11px; line-height: 1.35; }
+    td:nth-child(3) { text-align: center; width: 64px; color: #777; font-size: 12px; white-space: nowrap; }
+    td:nth-child(4) { text-align: right;  width: 100px; font-weight: 700; color: var(--green-dark); white-space: nowrap; padding-right: 20px; }
 
     .unit-badge {
       display: inline-block;
@@ -461,10 +463,10 @@
       .category-name { font-size: 16px; padding: 8px 10px; }
       table { font-size: 15px; }
       thead th { padding: 7px 5px; font-size: 13px; }
-      thead th:nth-child(2) { width: 40px; }
-      thead th:nth-child(3) { width: 80px; }
+      thead th:nth-child(3) { width: 40px; }
+      thead th:nth-child(4) { width: 80px; }
       td { padding: 9px 5px; font-size: 15px; }
-      td:nth-child(3) { padding-right: 6px; font-size: 15px; font-weight: 700; }
+      td:nth-child(4) { padding-right: 6px; font-size: 15px; font-weight: 700; }
 
       /* Footer */
       .footer { padding: 16px; }
@@ -517,7 +519,7 @@
       table { font-size: 12px !important; width: 100% !important; }
       thead th { font-size: 10px !important; padding: 5px 8px !important; }
       td { font-size: 12px !important; padding: 7px 8px !important; }
-      td:nth-child(3) { font-size: 12px !important; font-weight: 700 !important; }
+      td:nth-child(4) { font-size: 12px !important; font-weight: 700 !important; }
       .unit-badge { font-size: 10px !important; padding: 2px 5px !important; }
 
       /* Подвал */
@@ -532,6 +534,7 @@
 
 <!-- КНОПКИ СВЕРХУ -->
 <div class="top-bar" id="topBar">
+  <button class="top-btn btn-share" id="refreshBtn" onclick="refreshFromGoogleSheets()">↻ Обновить прайс</button>
   <button class="top-btn btn-share" onclick="toggleShare(event)">↗ Поделиться</button>
   <button class="top-btn btn-pdf" onclick="downloadPDF()">⬇ Скачать PDF</button>
 </div>
@@ -836,21 +839,31 @@
   async function initPrices() {
     setSyncStatus('loading');
     try {
-      const { data, error } = await supa
-        .from('fermama_prices')
-        .select('name, price');
-
+      let data = null;
+      let error = null;
+      ({ data, error } = await supa.from('fermama_prices').select('name, price, composition'));
+      if (error) {
+        ({ data, error } = await supa.from('fermama_prices').select('name, price'));
+      }
       if (error) throw error;
 
       if (data && data.length > 0) {
         const nameMap = {};
-        PRODUCTS.forEach(p => { nameMap[p.name] = p; });
+        PRODUCTS.forEach(p => { nameMap[normPriceName(p.name)] = p; });
         data.forEach(row => {
-          if (nameMap[row.name]) {
-            nameMap[row.name].price = row.price;
+          const key = normPriceName(row.name);
+          if (nameMap[key]) {
+            nameMap[key].price = row.price;
+            nameMap[key].composition = row.composition || nameMap[key].composition || '';
           } else {
             // Позиция из Supabase которой нет в базовом массиве
-            PRODUCTS.push({ name: row.name, cat: guessCat(row.name), unit: /вес\./i.test(row.name) ? 'кг' : 'шт', price: row.price });
+            PRODUCTS.push({
+              name: row.name,
+              cat: guessCat(row.name),
+              unit: /\bвес\.?\b/i.test(row.name) ? 'кг' : 'шт',
+              price: row.price,
+              composition: row.composition || ''
+            });
           }
         });
         setSyncStatus('ok');
@@ -903,11 +916,165 @@
   }
 
   function normPriceName(s) {
-    return s.toLowerCase().replace(/\s*фермама\s*/gi, '').replace(/\s+/g, ' ').trim();
+    return s.toLowerCase()
+      .replace(/\s*фермама\s*/gi, '')
+      .replace(/ё/g, 'е')
+      .replace(/(\d+)\s*(гр|г)\b/gi, '$1г')
+      .replace(/\bвес\.?\b/gi, 'вес')
+      .replace(/[.,;:]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   }
 
   function getBasePriceName(name) {
-    return name.replace(/\s*(?:\d+\s*(?:гр|г)|вес\.)\s*$/i, '').trim();
+    return normPriceName(name).replace(/\s*(?:\d+г|вес)\s*$/i, '').trim();
+  }
+
+  function getWeightFromName(name) {
+    const m = normPriceName(name).match(/(\d+)г\b/i);
+    return m ? parseInt(m[1], 10) : Number.POSITIVE_INFINITY;
+  }
+
+  function dedupeAndSortProducts(list) {
+    const byKey = new Map();
+    list.forEach((p) => {
+      const key = normPriceName(p.name);
+      if (!byKey.has(key)) byKey.set(key, p);
+      else byKey.set(key, { ...byKey.get(key), ...p });
+    });
+
+    return [...byKey.values()].sort((a, b) => {
+      const baseA = getBasePriceName(a.name);
+      const baseB = getBasePriceName(b.name);
+      if (baseA !== baseB) return baseA.localeCompare(baseB, 'ru');
+      if (a.unit === 'шт' && b.unit === 'кг') return -1;
+      if (a.unit === 'кг' && b.unit === 'шт') return 1;
+      if (a.unit === 'шт' && b.unit === 'шт') return getWeightFromName(a.name) - getWeightFromName(b.name);
+      return a.name.localeCompare(b.name, 'ru');
+    });
+  }
+
+  function parseCsvLine(line) {
+    const out = [];
+    let cur = '';
+    let q = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (q && line[i + 1] === '"') { cur += '"'; i++; }
+        else q = !q;
+      } else if (ch === ',' && !q) {
+        out.push(cur); cur = '';
+      } else cur += ch;
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  }
+
+  function parseCsvText(text) {
+    return text
+      .split(/\r?\n/)
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(parseCsvLine);
+  }
+
+  function parseSheetPrice(v) {
+    const n = parseInt(String(v || '').replace(/[^\d]/g, ''), 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function inferUnitFromName(name) {
+    return /\bвес\.?\b/i.test(name) ? 'кг' : 'шт';
+  }
+
+  function buildSheetRecords(rows) {
+    const out = [];
+    rows.forEach(cols => {
+      if (cols.length < 4) return;
+      const name = String(cols[1] || '').trim();
+      const composition = String(cols[2] || '').trim();
+      const price = parseSheetPrice(cols[3]);
+      if (!name || !price) return;
+      out.push({
+        name: name.replace(/\s*ФерМама\s*/gi, ' ').replace(/\s+/g, ' ').trim(),
+        composition,
+        price,
+        unit: inferUnitFromName(name),
+        cat: guessCat(name)
+      });
+    });
+    return out;
+  }
+
+  async function fetchRecordsFromGoogleSheets() {
+    const sheetId = '137bI11Xrjn7if8kyb2-M7YLnAbLSvKMCTXJUOEOMDhg';
+    const tabs = ['Прайс штучный', 'Прайс весовой'];
+    const all = [];
+
+    for (const tab of tabs) {
+      const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) throw new Error(`Не удалось прочитать вкладку: ${tab}`);
+      all.push(...buildSheetRecords(parseCsvText(await resp.text())));
+    }
+
+    const byNorm = new Map();
+    all.forEach(r => byNorm.set(normPriceName(r.name), r));
+    return [...byNorm.values()];
+  }
+
+  async function upsertRecordsToSupabase(records) {
+    const rows = records.map(r => ({
+      name: r.name,
+      unit: r.unit,
+      cat: r.cat,
+      price: r.price,
+      composition: r.composition || '',
+      updated_at: new Date().toISOString()
+    }));
+
+    let { error } = await supa.from('fermama_prices').upsert(rows, { onConflict: 'name' });
+    if (!error) return;
+
+    const fallback = rows.map(({ composition, ...rest }) => rest);
+    const second = await supa.from('fermama_prices').upsert(fallback, { onConflict: 'name' });
+    if (second.error) throw second.error;
+  }
+
+  function applyRecordsLocally(records) {
+    const byNorm = {};
+    PRODUCTS.forEach(p => { byNorm[normPriceName(p.name)] = p; });
+
+    records.forEach(r => {
+      const key = normPriceName(r.name);
+      const p = byNorm[key];
+      if (p) {
+        p.price = r.price;
+        p.composition = r.composition || p.composition || '';
+      } else {
+        PRODUCTS.push({ name: r.name, cat: r.cat, unit: r.unit, price: r.price, composition: r.composition || '' });
+      }
+    });
+  }
+
+  async function refreshFromGoogleSheets() {
+    const btn = document.getElementById('refreshBtn');
+    if (btn) btn.disabled = true;
+    setSyncStatus('loading');
+    try {
+      const records = await fetchRecordsFromGoogleSheets();
+      applyRecordsLocally(records);
+      await upsertRecordsToSupabase(records);
+      setSyncStatus('ok');
+      renderAll();
+    } catch (e) {
+      console.warn('Refresh from Google Sheets failed', e);
+      setSyncStatus('offline');
+      alert(`Ошибка обновления прайса: ${e.message || e}`);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   // ── Рендер ────────────────────────────────────────────────────────────────
@@ -924,9 +1091,11 @@
   ]);
 
   function renderAll() {
+    const preparedProducts = dedupeAndSortProducts(PRODUCTS);
+
     // Хиты
     document.getElementById('hitsGrid').innerHTML = HIT_NAMES
-      .map(n => PRODUCTS.find(p => p.name === n))
+      .map(n => preparedProducts.find(p => normPriceName(p.name) === normPriceName(n)))
       .filter(Boolean)
       .map(h => `
         <div class="hit-card">
@@ -939,7 +1108,7 @@
     // Таблица по категориям
     const catOrder = [];
     const cats = {};
-    PRODUCTS.forEach(p => {
+    preparedProducts.forEach(p => {
       if (!cats[p.cat]) { cats[p.cat] = []; catOrder.push(p.cat); }
       cats[p.cat].push(p);
     });
@@ -960,6 +1129,7 @@
         return `
           <tr>
             <td>${rowNum++}. ${p.name}${badge}</td>
+            <td>${p.composition ? p.composition : '—'}</td>
             <td><span class="unit-badge ${p.unit === 'шт' ? 'sht' : 'kg'}">${p.unit}</span></td>
             <td>${p.price.toLocaleString('ru')} ₽</td>
           </tr>`;
@@ -969,7 +1139,7 @@
         <div class="category-name">${cat}</div>
         <table>
           <thead><tr>
-            <th>Наименование</th><th>Ед.</th><th>Цена</th>
+            <th>Наименование</th><th>Состав</th><th>Ед.</th><th>Цена</th>
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
