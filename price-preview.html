@@ -276,15 +276,41 @@
 
     /* ---- PRODUCTS TABLE ---- */
     .products-section { padding: 32px 48px 40px; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
     .section-title {
       font-size: 14px;
       font-weight: 800;
       letter-spacing: 1px;
       text-transform: uppercase;
       color: #888;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #f0f0f0;
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .unit-filters { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .unit-filter-btn {
+      border: 1px solid #d8e3d0;
+      background: #fff;
+      color: #4b5563;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .unit-filter-btn.active {
+      background: #6BBF23;
+      border-color: #6BBF23;
+      color: #fff;
     }
 
     .category-block { margin-bottom: 28px; }
@@ -460,6 +486,7 @@
 
       /* Products table */
       .products-section { padding: 16px 10px 24px; }
+      .section-head { flex-direction: column; align-items: flex-start; gap: 10px; }
       .category-name { font-size: 16px; padding: 8px 10px; }
       table { font-size: 15px; }
       thead th { padding: 7px 5px; font-size: 13px; }
@@ -629,7 +656,14 @@
 
   <!-- ТАБЛИЦА ТОВАРОВ -->
   <div class="products-section">
-    <div class="section-title">Ассортимент</div>
+    <div class="section-head">
+      <div class="section-title">Ассортимент</div>
+      <div class="unit-filters">
+        <button id="filterAll" class="unit-filter-btn active" onclick="setUnitFilter('all')">Все</button>
+        <button id="filterSht" class="unit-filter-btn" onclick="setUnitFilter('sht')">Шт</button>
+        <button id="filterKg" class="unit-filter-btn" onclick="setUnitFilter('kg')">Вес</button>
+      </div>
+    </div>
     <div id="productsContainer"></div>
   </div>
 
@@ -687,6 +721,7 @@
     'Пельмени Свинина-Курица 900 гр',
     'Колбаски куриные из филе грудки вес.',
   ];
+  let currentUnitFilter = 'all'; // all | sht | kg
 
   // Дата
   const now = new Date();
@@ -839,6 +874,18 @@
   async function initPrices() {
     setSyncStatus('loading');
     try {
+      const records = await fetchRecordsFromGoogleSheets();
+      if (records && records.length) {
+        applyRecordsLocally(records);
+        setSyncStatus('ok');
+        renderAll();
+        return;
+      }
+    } catch(e) {
+      console.warn('Google Sheets недоступен, пробуем Supabase', e);
+    }
+
+    try {
       let data = null;
       let error = null;
       ({ data, error } = await supa.from('fermama_prices').select('name, price, composition'));
@@ -893,10 +940,29 @@
     el.style.display = 'inline-block';
   }
 
+  function isAllowedByFilter(unit) {
+    if (currentUnitFilter === 'sht') return unit === 'шт';
+    if (currentUnitFilter === 'kg') return unit === 'кг';
+    return true;
+  }
+
+  function setUnitFilter(next) {
+    currentUnitFilter = next;
+    const allBtn = document.getElementById('filterAll');
+    const shtBtn = document.getElementById('filterSht');
+    const kgBtn = document.getElementById('filterKg');
+    if (allBtn) allBtn.classList.toggle('active', next === 'all');
+    if (shtBtn) shtBtn.classList.toggle('active', next === 'sht');
+    if (kgBtn) kgBtn.classList.toggle('active', next === 'kg');
+    renderAll();
+  }
+
   // ── Вспомогательные функции ───────────────────────────────────────────────
 
   function guessCat(name) {
     const n = name.toLowerCase();
+    if (n.includes('блин'))     return 'Блинчики';
+    if (n.includes('олад'))     return 'Котлеты';
     if (n.includes('вареник'))  return 'Вареники';
     if (n.includes('голубц'))   return 'Голубцы';
     if (n.includes('зраз'))     return 'Зразы';
@@ -1092,10 +1158,12 @@
 
   function renderAll() {
     const preparedProducts = dedupeAndSortProducts(PRODUCTS);
+    const filteredProducts = preparedProducts.filter(p => isAllowedByFilter(p.unit));
 
     // Хиты
     document.getElementById('hitsGrid').innerHTML = HIT_NAMES
       .map(n => preparedProducts.find(p => normPriceName(p.name) === normPriceName(n)))
+      .filter(p => p && isAllowedByFilter(p.unit))
       .filter(Boolean)
       .map(h => `
         <div class="hit-card">
@@ -1108,7 +1176,7 @@
     // Таблица по категориям
     const catOrder = [];
     const cats = {};
-    preparedProducts.forEach(p => {
+    filteredProducts.forEach(p => {
       if (!cats[p.cat]) { cats[p.cat] = []; catOrder.push(p.cat); }
       cats[p.cat].push(p);
     });

@@ -286,7 +286,24 @@
 
         resortProducts();
         syncRenderedPrices();
+        return true;
       } catch(e) {}
+      return false;
+    }
+
+    async function loadPricesFromGoogleSheets() {
+      try {
+        const records = await fetchSheetRecords();
+        if (!records.length) return false;
+        applyRecordsToProducts(records);
+        return true;
+      } catch(e) {}
+      return false;
+    }
+
+    async function initPriceData() {
+      const fromSheets = await loadPricesFromGoogleSheets();
+      if (!fromSheets) await loadPricesFromSupabase();
     }
 
     // =========================
@@ -1637,7 +1654,7 @@
     // Старт
     // =========================
     render();
-    loadPricesFromSupabase();
+    initPriceData();
   </script>
 </body>
 </html>
