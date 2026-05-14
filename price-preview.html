@@ -522,10 +522,13 @@
 
       .page-wrapper { box-shadow: none; margin: 0; max-width: 100%; border-radius: 0; width: 100%; }
       .top-bar, .share-popup, .share-overlay, .admin-overlay { display: none !important; }
-      .category-block { break-inside: auto; page-break-inside: auto; }
-      .category-name { break-after: avoid; page-break-after: avoid; }
-      table { break-inside: auto; page-break-inside: auto; }
-      tr { break-inside: avoid; page-break-inside: avoid; page-break-after: auto; }
+      .category-block { break-inside: auto !important; page-break-inside: auto !important; margin-bottom: 10px !important; }
+      .category-name { break-after: auto !important; page-break-after: auto !important; }
+      table, thead, tbody, tr, td, th {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+      }
+      tr { page-break-after: auto !important; }
 
       /* Хедер */
       .header { background: #6BBF23 !important; padding: 24px 28px !important; flex-direction: row !important; align-items: center !important; text-align: left !important; }
@@ -565,6 +568,19 @@
       .footer-value { color: white !important; font-size: 12px !important; }
       .footer-label { color: rgba(255,255,255,0.7) !important; font-size: 9px !important; }
       .footer-manager-line { color: rgba(255,255,255,0.85) !important; font-size: 11px !important; }
+    }
+
+    /* Отдельный режим для генерации PDF: максимально свободные переносы */
+    body.pdf-export .category-block { margin-bottom: 8px !important; }
+    body.pdf-export .category-name { break-after: auto !important; page-break-after: auto !important; }
+    body.pdf-export table,
+    body.pdf-export thead,
+    body.pdf-export tbody,
+    body.pdf-export tr,
+    body.pdf-export td,
+    body.pdf-export th {
+      break-inside: auto !important;
+      page-break-inside: auto !important;
     }
   </style>
 </head>
@@ -756,6 +772,7 @@
         window.print();
         return;
       }
+      document.body.classList.add('pdf-export');
       const ts = new Date();
       const stamp = `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`;
       await html2pdf().set({
@@ -764,12 +781,13 @@
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] }
+        pagebreak: { mode: ['legacy'] }
       }).from(el).save();
     } catch (e) {
       console.error('PDF export failed:', e);
       window.print();
     } finally {
+      document.body.classList.remove('pdf-export');
       if (btn) { btn.textContent = '⬇ Скачать PDF'; btn.disabled = false; }
     }
   }
