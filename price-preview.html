@@ -1063,7 +1063,7 @@
       const price = parseSheetPrice(cols[3]);
       if (!name || !price) return;
       out.push({
-        name: name.replace(/\s*ФерМама\s*/gi, ' ').replace(/\s+/g, ' ').trim(),
+        name: name.replace(/\s+/g, ' ').trim(),
         composition,
         price,
         unit: inferUnitFromName(name),
@@ -1109,18 +1109,17 @@
   }
 
   function applyRecordsLocally(records) {
-    const byNorm = {};
-    PRODUCTS.forEach(p => { byNorm[normPriceName(p.name)] = p; });
-
+    // Витрина прайса полностью формируется из Google Sheets.
+    // Если позиции нет в таблице — в прайсе ее не показываем.
+    PRODUCTS.length = 0;
     records.forEach(r => {
-      const key = normPriceName(r.name);
-      const p = byNorm[key];
-      if (p) {
-        p.price = r.price;
-        p.composition = r.composition || p.composition || '';
-      } else {
-        PRODUCTS.push({ name: r.name, cat: r.cat, unit: r.unit, price: r.price, composition: r.composition || '' });
-      }
+      PRODUCTS.push({
+        name: r.name,
+        cat: r.cat,
+        unit: r.unit,
+        price: r.price,
+        composition: r.composition || ''
+      });
     });
   }
 
